@@ -1,9 +1,13 @@
 from flask import Flask, redirect, url_for, session, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app=Flask(__name__)
-app.secret_key = "YOUR_SECRET_KEY"  # Required for sessions
+app.secret_key = os.getenv("app_secret_key")    # Required for sessions
 
 # -------------------- DATABASE CONFIG --------------------
 
@@ -61,8 +65,8 @@ oauth = OAuth(app)
 # -------------------- GOOGLE OAUTH --------------------
 google = oauth.register(
     name='google',
-    client_id='YOUR_GOOGLE_CLIENT_ID',
-    client_secret='YOUR_GOOGLE_CLIENT_SECRET',
+    client_id=os.getenv("google_client_id"),
+    client_secret=os.getenv("google_client_secret"),
     access_token_url='https://accounts.google.com/o/oauth2/token',
     authorize_url='https://accounts.google.com/o/oauth2/auth',
     api_base_url='https://www.googleapis.com/oauth2/v1/',
@@ -90,15 +94,44 @@ class PreRegistered(db.Model):
 # -------------------- ROUTES --------------------
 
 @app.route('/')
-def login():
+def index():
     return render_template("index.html")
 
-# Google login button triggers this route
+# Triggered when login button is clicked 
+@app.route('/login_button',methods=['GET','POST'])
+def login():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    # check in our users table whether this is registered and correct 
+    user = Users.query.filter_by(username=username)
+    if user:
+        if user.password == password:
+            # Password matches, set session and redirect based on role
+            session['username'] = user.username
+            session['role'] = user.role
+            if user.role == 'student':
+                return redirect('/Student')
+            elif user.role == 'driver':
+                return redirect('/Driver')
+            elif user.role == 'admin':
+                return redirect('/Admin')
+            else:
+                return "Unknown role", 400
+        else:
+            # Password mismatch
+            return "Incorrect Username or password", 401
+    else:
+        # User not found
+        return "User not found", 404
+    
+
+# login by google button triggers this route
 @app.route('/login_google')
 def login_google():
     redirect_uri = url_for('authorize_google', _external=True)
     return google.authorize_redirect(redirect_uri)
 
+# Triggered when you click the link "don't have an account?"
 @app.route('/registration')
 def reg():
     return render_template("registration.html")
@@ -165,3 +198,15 @@ def registration2():
 
     # GET request → show registration form
     return render_template("registration2.html")
+
+@app.route('/Student')
+def student_ui():
+    return render_template("student_ui.html")
+
+@app.route('/Driver')
+def driver_ui():
+    return render_template("driver_ui.html")
+
+@app.route('/Admin')
+def admin_ui():
+    return render_template("admin_ui.html")
