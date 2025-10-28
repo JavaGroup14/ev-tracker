@@ -2,41 +2,32 @@ from flask import Flask, redirect, url_for, session, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
-import os
+import os, urllib
 
 load_dotenv()
 
-app=Flask(__name__)
-app.secret_key = os.getenv("app_secret_key")    # Required for sessions
-
-# -------------------- DATABASE CONFIG --------------------
-
-# Path to your .mdf file
-db_path = r"D:\Java\JavaProject\Database\EvTracker.mdf"
-
-# SQLAlchemy connection string for LocalDB
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    rf"mssql+pyodbc:///?odbc_connect="
-    rf"Driver={{SQL Server}};"
-    rf"Server=(LocalDB)\MSSQLLocalDB;" 
-    rf"AttachDbFilename={db_path};"
-    rf"Trusted_Connection=yes;"
+# Build ODBC connection string safely
+params = urllib.parse.quote_plus(
+    f"Driver={{ODBC Driver 18 for SQL Server}};"
+    f"Server={os.getenv('DB_SERVER')};"
+    f"Database={os.getenv('DB_NAME')};"
+    f"Uid={os.getenv('DB_USER')};"
+    f"Pwd={os.getenv('DB_PASSWORD')};"
+    f"Encrypt=yes;"
+    f"TrustServerCertificate=no;"
 )
+
+app=Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mssql+pyodbc:///?odbc_connect={params}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 """
-    Part	                                         Meaning
-mssql+pyodbc://	                Tells SQLAlchemy to use the MSSQL dialect with the pyodbc driver
-odbc_connect=	                Means you're going to specify all ODBC parameters manually
-Driver={SQL Server}	            Use Microsoft SQL Server driver
-Server=(LocalDB)\MSSQLLocalDB	Connect to your local SQL Server instance
-AttachDbFilename=...	        Attach the specific .mdf file (your database)
-Trusted_Connection=yes	        Use Windows Authentication instead of username/password
-
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     -> This just disables a warning — SQLAlchemy otherwise listens to every object change, which slows things down.
-
 """
+
+app.secret_key = os.getenv("app_secret_key")    # Required for sessions
 
 db = SQLAlchemy(app)
 """
