@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard - EV Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{url_for('static',filename='css/styles.css')}}">
+    <style>
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Custom animations for driver dashboard */
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        /* Panel animations */
+        #activeRidePanel.show,
+        #earningsPanel.show,
+        #vehiclesPanel.show {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        #incomingRideAlert.show {
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        /* Toast notification animation */
+        #notificationToast.show {
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        /* Map container styling */
+        #mapContainer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* Online toggle glow effect */
+        .peer-checked ~ .peer {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+        }
+        
+        /* Button hover effects */
+        button {
+            transition: all 0.2s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        /* Incoming ride alert highlight */
+        #incomingRideAlert {
+            border: 2px solid #f97316;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Earnings cards hover effect */
+        #earningsPanel .bg-blue-50:hover,
+        #earningsPanel .bg-green-50:hover,
+        #earningsPanel .bg-purple-50:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        /* Status badge animation */
+        #rideStatus {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Custom scrollbar for panels */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Smooth transitions for all panels */
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+        
+        /* Loading state for buttons */
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 640px) {
+            #incomingRideAlert {
+                top: 80px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Map Container -->
+    <div id="mapContainer" class="fixed inset-0 w-full h-screen">
+        <!-- Map will be rendered here via your API -->
+        <div class="w-full h-full bg-gray-300">
+            <div class="flex items-center justify-center h-full text-gray-500">
+                <div class="text-center">
+                    <i class="fas fa-map-marked-alt text-6xl mb-4"></i>
+                    <p class="text-lg">Map View</p>
+                    <p class="text-sm mt-2">Your map API will render here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Control Bar -->
+    <div class="fixed top-4 left-4 right-4 z-50">
+        <div class="bg-white rounded-2xl shadow-lg px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-car text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-semibold text-gray-900">Driver Mode</h1>
+                        <p class="text-xs text-gray-500" id="statusText">Offline</p>
+                    </div>
+                </div>
+                <!-- Online/Offline Toggle -->
+                <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="onlineToggle" class="sr-only peer">
+                    <div class="w-14 h-8 bg-gray-300 rounded-full peer peer-checked:bg-green-600 peer-transition-colors duration-300">
+                        <div class="w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-6 mt-1 ml-1"></div>
+                    </div>
+                </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incoming Ride Alert (shown when ride request comes) -->
+    <div id="incomingRideAlert" class="fixed inset-x-4 top-20 z-50 bg-white rounded-2xl shadow-2xl hidden">
+        <div class="p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <div class="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium mb-2">
+                        <i class="fas fa-bell animate-pulse"></i>
+                        New Ride Request
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Pickup Request</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2 text-gray-700">
+                            <i class="fas fa-map-marker-alt text-green-600"></i>
+                            <span id="pickupLocation">College Gate, Main Entrance</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-gray-700">
+                            <i class="fas fa-flag text-blue-600"></i>
+                            <span id="dropLocation">Shopping Mall, City Center</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-gray-700">
+                            <i class="fas fa-ruler-combined"></i>
+                            <span>Distance: 5.2 km</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-gray-700">
+                            <i class="fas fa-rupee-sign"></i>
+                            <span class="font-semibold">Fare: ₹150</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button id="acceptRideBtn" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
+                    <i class="fas fa-check mr-2"></i>Accept
+                </button>
+                <button id="declineRideBtn" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Decline
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Ride Panel (shown when driver has active ride) -->
+    <div id="activeRidePanel" class="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-3xl shadow-2xl hidden">
+        <div class="px-6 pt-4 pb-6">
+            <div class="flex justify-center mb-4">
+                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="flex items-center justify-center gap-2 mb-3">
+                    <span id="rideStatus" class="bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-medium">Pickup</span>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 text-center mb-3" id="passengerName">Passenger: Ramesh</h3>
+            </div>
+
+            <div class="space-y-3 mb-4">
+                <div class="p-4 bg-green-50 rounded-xl border-2 border-green-200">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-map-marker-alt text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-green-900 mb-1">Pickup Location</p>
+                            <p class="text-gray-900" id="pickupLocationText">College Gate</p>
+                            <p class="text-xs text-gray-600 mt-1" id="pickupDistance">1.2 km away</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 bg-blue-50 rounded-xl">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-flag text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-blue-900 mb-1">Drop Location</p>
+                            <p class="text-gray-900" id="dropLocationText">Shopping Mall</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mb-4">
+                <button class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-phone mr-2"></i>Call Passenger
+                </button>
+                <button id="cancelRideBtn" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+            </div>
+
+            <button id="completeRideBtn" class="w-full bg-green-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-700 transition-colors hidden">
+                <i class="fas fa-check-circle mr-2"></i>Mark as Completed
+            </button>
+        </div>
+    </div>
+
+    <!-- Earnings Summary Panel (shown when offline) -->
+    <div id="earningsPanel" class="fixed bottom-0 left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl">
+        <div class="px-6 pt-4 pb-6">
+            <div class="flex justify-center mb-4">
+                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Today's Summary</h3>
+            <div class="grid grid-cols-3 gap-4 mb-4">
+                <div class="text-center p-3 bg-blue-50 rounded-xl">
+                    <p class="text-2xl font-bold text-blue-600">12</p>
+                    <p class="text-xs text-gray-600">Rides</p>
+                </div>
+                <div class="text-center p-3 bg-green-50 rounded-xl">
+                    <p class="text-2xl font-bold text-green-600">₹1,850</p>
+                    <p class="text-xs text-gray-600">Earnings</p>
+                </div>
+                <div class="text-center p-3 bg-purple-50 rounded-xl">
+                    <p class="text-2xl font-bold text-purple-600">95 km</p>
+                    <p class="text-xs text-gray-600">Distance</p>
+                </div>
+            </div>
+            <div class="text-center text-sm text-gray-500">
+                Turn on to start receiving ride requests
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notificationToast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-2xl rounded-xl px-6 py-4 hidden">
+        <div class="flex items-center gap-3">
+            <i id="toastIcon" class="fas fa-info-circle text-blue-600 text-xl"></i>
+            <p id="toastMessage" class="text-gray-900 font-medium">Message here</p>
+        </div>
+    </div>
+
+    <script>
+        // Toggle online/offline status
+        document.getElementById('onlineToggle').addEventListener('change', function() {
+            const statusText = document.getElementById('statusText');
+            const earningsPanel = document.getElementById('earningsPanel');
+            
+            if (this.checked) {
+                statusText.textContent = 'Online';
+                statusText.classList.remove('text-gray-500');
+                statusText.classList.add('text-green-600');
+                earningsPanel.classList.add('hidden');
+                showToast('You are now online', 'check-circle', 'green');
+            } else {
+                statusText.textContent = 'Offline';
+                statusText.classList.remove('text-green-600');
+                statusText.classList.add('text-gray-500');
+                earningsPanel.classList.remove('hidden');
+                showToast('You are now offline', 'info-circle', 'blue');
+            }
+        });
+
+        // Show/hide panels functions
+        function showIncomingRide() {
+            document.getElementById('incomingRideAlert').classList.remove('hidden');
+            // Auto-hide after 30 seconds if not accepted
+            setTimeout(() => {
+                document.getElementById('incomingRideAlert').classList.add('hidden');
+            }, 30000);
+        }
+
+        function showActiveRide() {
+            document.getElementById('activeRidePanel').classList.remove('hidden');
+            document.getElementById('earningsPanel').classList.add('hidden');
+        }
+
+        function showToast(message, icon, color) {
+            const toast = document.getElementById('notificationToast');
+            document.getElementById('toastMessage').textContent = message;
+            document.getElementById('toastIcon').className = `fas fa-${icon} text-${color}-600 text-xl`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        // Simulate incoming ride request after 5 seconds (for demo)
+        setTimeout(() => {
+            if (document.getElementById('onlineToggle').checked) {
+                showIncomingRide();
+            }
+        }, 5000);
+
+        // Accept ride handler
+        document.getElementById('acceptRideBtn').addEventListener('click', () => {
+            document.getElementById('incomingRideAlert').classList.add('hidden');
+            showActiveRide();
+            showToast('Ride accepted successfully!', 'check-circle', 'green');
+        });
+
+        // Decline ride handler
+        document.getElementById('declineRideBtn').addEventListener('click', () => {
+            document.getElementById('incomingRideAlert').classList.add('hidden');
+            showToast('Ride declined', 'times-circle', 'red');
+        });
+    </script>
+
+  <script src="{{url_for('static',filename='js/script1.js')}}"></script>
+</body>
+</html>

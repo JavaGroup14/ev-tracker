@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EV Tracker | Create your account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+        colors: {
+          primary: {
+            50: '#eef8ff', 100: '#d9efff', 200: '#bce4ff', 300: '#8fd3ff',
+            400: '#5bbdff', 500: '#2aa6ff', 600: '#0f86e6', 700: '#0c67b4',
+            800: '#0d5491', 900: '#0f4677'
+          },
+          accent: {
+            500: '#22c55e'
+          }
+        },
+        boxShadow: {
+          glow: '0 10px 30px rgba(16, 185, 129, 0.15)'
+        }
+      }
+    }
+  }
+</script>
+<meta name="description" content="Register to EV Tracker - track and manage electric vehicles across NIT Warangal campus." />
+</head>
+<body class="min-h-screen font-sans text-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+  <div class="relative">
+    <!-- Subtle grid background -->
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0">
+      <div class="h-full w-full opacity-20" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0); background-size: 24px 24px;"></div>
+    </div>
+
+    <header class="relative z-10">
+      <nav class="mx-auto max-w-7xl px-6 py-6 flex items-center justify-between">
+        <a href="#" class="flex items-center gap-3 group">
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-emerald-500 p-[2px]">
+            <div class="h-full w-full rounded-[10px] bg-slate-950 grid place-items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-primary-300 group-hover:text-primary-200 transition-colors"><path d="M7 6h7a5 5 0 0 1 5 5v7a1 1 0 0 1-1 1h-7a5 5 0 0 1-5-5V7a1 1 0 0 1 1-1Zm2 3h5a3 3 0 0 1 3 3v5h-5a3 3 0 0 1-3-3V9Z"/><path d="M7 6V5a3 3 0 0 1 3-3h7v2h-7a1 1 0 0 0-1 1v1H7Z"/></svg>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-slate-400">NIT Warangal</p>
+            <p class="text-base font-semibold text-white">EV Tracker</p>
+          </div>
+        </a>
+        <div class="text-sm text-slate-300">
+          Already have an account? <a href="{{url_for('login')}}" class="text-primary-300 hover:text-primary-200 font-medium">Sign in</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="relative z-10">
+      <section class="mx-auto max-w-7xl px-6 py-8 lg:py-14 grid lg:grid-cols-2 gap-10 items-stretch">
+        <!-- Left panel: brand image blended with background -->
+        <div class="hidden lg:flex flex-col justify-center">
+          <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-white/0 backdrop-blur-sm p-0">
+            <div class="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-emerald-400/5 to-cyan-400/5"></div>
+            <figure class="relative">
+              <img src="{{url_for('static', filename='images/ev-track.png')}}" alt="EV Tracker visual" class="block w-full h-[560px] object-cover mix-blend-screen opacity-90 select-none pointer-events-none blend-mask" />
+              <figcaption class="sr-only">EV Tracker campus vehicles visualization</figcaption>
+            </figure>
+            <div class="absolute inset-0 ring-1 ring-white/10 rounded-2xl pointer-events-none"></div>
+          </div>
+        </div>
+
+        <!-- Right panel: registration form -->
+        <div>
+          <div class="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-8 shadow-glow">
+            <h2 class="text-xl sm:text-2xl font-semibold text-white">Sign up to continue</h2>
+            <p class="mt-1 text-sm text-slate-300">Use your NITW email for quick verification.</p>
+
+            <!-- Social auth: Google -->
+            <div class="mt-5">
+              <button type="button" aria-label="Continue with Google" onclick="window.location.href='#'" class="w-full inline-flex items-center justify-center gap-3 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-slate-100 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 533.5 544.3" class="h-5 w-5" aria-hidden="true">
+                  <path fill="#EA4335" d="M533.5 278.4c0-18.6-1.7-36.5-4.9-53.8H272v101.8h147.1c-6.4 34.6-25.7 63.9-54.8 83.5v68h88.4c51.7-47.6 80.8-117.8 80.8-199.5z"/>
+                  <path fill="#34A853" d="M272 544.3c73.4 0 135-24.3 180-66.3l-88.4-68c-24.5 16.4-55.9 26-91.6 26-70.4 0-130.1-47.5-151.5-111.2H30.7v69.9c44.7 88.8 136.1 149.6 241.3 149.6z"/>
+                  <path fill="#FBBC04" d="M120.5 324.8c-10.3-30.6-10.3-63.6 0-94.2v-69.9H30.7c-43.6 86.9-43.6 187.1 0 274l89.8-69.9z"/>
+                  <path fill="#4285F4" d="M272 106.1c39.9-.6 78.2 14.8 107.2 42.7l80-80C406.6 25.5 340.7-.1 272 0 166.8 0 75.4 60.8 30.7 149.6l89.8 69.9C141.9 155.7 201.6 108.2 272 108.2z"/>
+                </svg>
+                <span class="font-medium">Continue with Google</span>
+              </button>
+              <div class="mt-5 flex items-center gap-3">
+                <div class="h-px flex-1 bg-white/10"></div>
+                <span class="text-xs uppercase tracking-wider text-slate-400">or</span>
+                <div class="h-px flex-1 bg-white/10"></div>
+              </div>
+            </div>
+
+            <form id="registrationForm" class="mt-6 space-y-5" novalidate>
+              <div>
+                <label for="username" class="block text-sm text-slate-300 mb-1">Username</label>
+                <input id="username" name="username" type="text" autocomplete="username" required
+                       class="w-full rounded-lg border border-white/10 bg-slate-900/60 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/60 px-3 py-2" placeholder="Username" />
+                <p class="mt-1 hidden text-xs text-rose-400" data-error-for="username"></p>
+              </div>
+
+              <div>
+                <label for="email" class="block text-sm text-slate-300 mb-1">Email</label>
+                <input id="email" name="email" type="email" autocomplete="email" required
+                       class="w-full rounded-lg border border-white/10 bg-slate-900/60 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/60 px-3 py-2" placeholder="Enter your email" />
+                <p class="mt-1 hidden text-xs text-rose-400" data-error-for="email"></p>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="password" class="block text-sm text-slate-300 mb-1">Password</label>
+                  <div class="relative">
+                    <input id="password" name="password" type="password" required minlength="8"
+                           class="w-full rounded-lg border border-white/10 bg-slate-900/60 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/60 px-3 py-2 pr-10" placeholder="Password" />
+                    <button type="button" class="absolute inset-y-0 right-2 grid place-items-center text-slate-400 hover:text-slate-200" data-toggle-password="#password" aria-label="Toggle password visibility">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5"><path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+                    </button>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-400" id="passwordHelp">Use 8+ chars with a mix of letters, numbers and symbols.</p>
+                  <div class="mt-2 h-1.5 w-full rounded-full bg-white/10">
+                    <div id="passwordStrength" class="h-1.5 rounded-full bg-emerald-500 w-0 transition-all"></div>
+                  </div>
+                  <p class="mt-1 hidden text-xs text-rose-400" data-error-for="password"></p>
+                </div>
+                <div>
+                  <label for="confirmPassword" class="block text-sm text-slate-300 mb-1">Confirm password</label>
+                  <div class="relative">
+                    <input id="confirmPassword" name="confirmPassword" type="password" required minlength="8"
+                           class="w-full rounded-lg border border-white/10 bg-slate-900/60 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/60 px-3 py-2 pr-10" placeholder="Confirm Password" />
+                    <button type="button" class="absolute inset-y-0 right-2 grid place-items-center text-slate-400 hover:text-slate-200" data-toggle-password="#confirmPassword" aria-label="Toggle password visibility">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5"><path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+                    </button>
+                  </div>
+                  <p class="mt-1 hidden text-xs text-rose-400" data-error-for="confirmPassword"></p>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm text-slate-300 mb-3">Select Your Role</label>
+                <div class="grid grid-cols-3 gap-4">
+                  <!-- Student Role Card -->
+                  <div class="role-card cursor-pointer rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 p-4 text-center group" data-role="student">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary-500/20 flex items-center justify-center group-hover:bg-primary-500/30 transition-colors">
+                      <!-- graduation cap -->
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-primary-400">
+                        <path d="M12 3L2 8.25l10 5 8.5-4.17V13h1.5V8.25L12 3Z"/>
+                        <path d="M6.5 12.5v2.25c0 1.07 2.9 2.75 5.5 2.75s5.5-1.68 5.5-2.75V12.5L12 15l-5.5-2.5Z"/>
+                      </svg>
+                    </div>
+                    <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Student</span>
+                  </div>
+
+                  <!-- Driver Role Card -->
+                  <div class="role-card cursor-pointer rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 p-4 text-center group" data-role="driver">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary-500/20 flex items-center justify-center group-hover:bg-primary-500/30 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-primary-400">
+                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+                      </svg>
+                    </div>
+                    <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Driver</span>
+                  </div>
+
+                  <!-- Admin Role Card -->
+                  <div class="role-card cursor-pointer rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 p-4 text-center group" data-role="admin">
+                     <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary-500/20 flex items-center justify-center group-hover:bg-primary-500/30 transition-colors relative">
+                      <!-- person -->
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-primary-400">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                      </svg>
+                      <!-- small shield overlay -->
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 text-primary-400 absolute -top-1 -right-1">
+                        <path d="M12 2 5 5v5c0 4.5 3.12 8.73 7 9.9 3.88-1.17 7-5.4 7-9.9V5l-7-3z"/>
+                      </svg>
+                    </div>
+                    <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Admin</span>
+                  </div>
+                </div>
+                <input type="hidden" id="role" name="role" value="" required />
+                <p class="mt-1 hidden text-xs text-rose-400" data-error-for="role"></p>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <input id="tos" name="tos" type="checkbox" class="mt-1 rounded border-white/20 bg-slate-900/60 text-primary-500 focus:ring-primary-500" required />
+                <label for="tos" class="text-sm text-slate-300">I agree to the <a href="#" class="text-primary-300 hover:text-primary-200">Terms</a> and <a href="#" class="text-primary-300 hover:text-primary-200">Privacy Policy</a>.</label>
+              </div>
+
+              <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary-600 to-emerald-600 hover:from-primary-500 hover:to-emerald-500 text-white font-medium px-4 py-2.5 shadow-glow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5"><path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm1 15h-2v-2h2Zm0-4h-2V7h2Z"/></svg>
+                Create account
+              </button>
+
+              <div class="text-center text-sm text-slate-300">
+                By continuing, we may send a one-time verification to your NITW email.
+              </div>
+            </form>
+
+            <div id="formSuccess" class="mt-6 hidden rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300">
+              Registration successful. Check your email to verify your account.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="relative z-10 py-8">
+      <div class="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <p>© <span id="year"></span> EV Tracker, NIT Warangal</p>
+        <div class="flex items-center gap-4">
+          <a href="#" class="hover:text-slate-200">Docs</a>
+          <a href="#" class="hover:text-slate-200">Support</a>
+          <a href="#" class="hover:text-slate-200">Status</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="{{url_for('static', filename='js/script1.js')}}"></script>
+</body>
+</html>

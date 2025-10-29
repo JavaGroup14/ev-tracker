@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EV Tracker | Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{url_for('static',filename='css/styles.css')}}">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+        colors: {
+          primary: {
+            50: '#eef8ff', 100: '#d9efff', 200: '#bce4ff', 300: '#8fd3ff',
+            400: '#5bbdff', 500: '#2aa6ff', 600: '#0f86e6', 700: '#0c67b4',
+            800: '#0d5491', 900: '#0f4677'
+          }
+        },
+        boxShadow: { glow: '0 10px 30px rgba(16, 185, 129, 0.15)' }
+      }
+    }
+  }
+</script>
+<meta name="description" content="Sign in to EV Tracker - NIT Warangal EV monitoring." />
+</head>
+<body class="min-h-screen font-sans text-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+  <div class="relative">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0">
+      <div class="h-full w-full opacity-20" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0); background-size: 24px 24px;"></div>
+    </div>
+
+    <header class="relative z-10">
+      <nav class="mx-auto max-w-7xl px-6 py-6 flex items-center justify-between">
+        <a href="{{url_for('reg')}}" class="flex items-center gap-3 group">
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-emerald-500 p-[2px]">
+            <div class="h-full w-full rounded-[10px] bg-slate-950 grid place-items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-primary-300 group-hover:text-primary-200 transition-colors"><path d="M7 6h7a5 5 0 0 1 5 5v7a1 1 0 0 1-1 1h-7a5 5 0 0 1-5-5V7a1 1 0 0 1 1-1Zm2 3h5a3 3 0 0 1 3 3v5h-5a3 3 0 0 1-3-3V9Z"/><path d="M7 6V5a3 3 0 0 1 3-3h7v2h-7a1 1 0 0 0-1 1v1H7Z"/></svg>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-slate-400">NIT Warangal</p>
+            <p class="text-base font-semibold text-white">EV Tracker</p>
+          </div>
+        </a>
+        <div class="text-sm text-slate-300">
+          New here? <a data-soft-nav href="{{url_for('reg')}}" class="text-primary-300 hover:text-primary-200 font-medium">Create account</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="relative z-10">
+      <section class="mx-auto max-w-7xl px-6 py-8 lg:py-14 grid lg:grid-cols-2 gap-10 items-stretch">
+        <!-- Left: blended image -->
+        <div class="hidden lg:flex flex-col justify-center">
+          <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-white/0 backdrop-blur-sm p-0">
+            <div class="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-emerald-400/5 to-cyan-400/5"></div>
+            <figure class="relative">
+              <img src="{{url_for('static',filename='images/ev-track.png')}}" alt="EV Tracker visual" class="block w-full h-[560px] object-cover mix-blend-screen opacity-90 select-none pointer-events-none blend-mask" />
+              <figcaption class="sr-only">EV Tracker campus vehicles visualization</figcaption>
+            </figure>
+            <div class="absolute inset-0 ring-1 ring-white/10 rounded-2xl pointer-events-none"></div>
+          </div>
+        </div>
+
+        <!-- Right: login form -->
+        <div>
+          <div class="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 sm:p-8 shadow-glow">
+            <h1 class="text-xl sm:text-2xl font-semibold text-white">Welcome back</h1>
+            <p class="mt-1 text-sm text-slate-300">Sign in with your NITW email.</p>
+
+            <!-- Social auth: Google -->
+            <div class="mt-5">
+              <button type="button" aria-label="Continue with Google" onclick="window.location.href='{{url_for('login_google')}}'" data-soft-nav class="w-full inline-flex items-center justify-center gap-3 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-slate-100 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-primary-500">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 533.5 544.3" class="h-5 w-5" aria-hidden="true">
+                  <path fill="#EA4335" d="M533.5 278.4c0-18.6-1.7-36.5-4.9-53.8H272v101.8h147.1c-6.4 34.6-25.7 63.9-54.8 83.5v68h88.4c51.7-47.6 80.8-117.8 80.8-199.5z"/>
+                  <path fill="#34A853" d="M272 544.3c73.4 0 135-24.3 180-66.3l-88.4-68c-24.5 16.4-55.9 26-91.6 26-70.4 0-130.1-47.5-151.5-111.2H30.7v69.9c44.7 88.8 136.1 149.6 241.3 149.6z"/>
+                  <path fill="#FBBC04" d="M120.5 324.8c-10.3-30.6-10.3-63.6 0-94.2v-69.9H30.7c-43.6 86.9-43.6 187.1 0 274l89.8-69.9z"/>
+                  <path fill="#4285F4" d="M272 106.1c39.9-.6 78.2 14.8 107.2 42.7l80-80C406.6 25.5 340.7-.1 272 0 166.8 0 75.4 60.8 30.7 149.6l89.8 69.9C141.9 155.7 201.6 108.2 272 108.2z"/>
+                </svg>
+                <span class="font-medium">Continue with Google</span>
+              </button>
+              <div class="mt-5 flex items-center gap-3">
+                <div class="h-px flex-1 bg-white/10"></div>
+                <span class="text-xs uppercase tracking-wider text-slate-400">or</span>
+                <div class="h-px flex-1 bg-white/10"></div>
+              </div>
+            </div>
+
+            <form id="loginForm" class="mt-6 space-y-5" novalidate>
+              <div>
+                <label for="loginEmail" class="block text-sm text-slate-300 mb-1">Email</label>
+                <input id="loginEmail" name="email" type="email" autocomplete="email" required
+                       class="w-full rounded-lg border border-white/10 bg-slate-900/60 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/60 px-3 py-2" placeholder="Enter your email" />
+                <p class="mt-1 hidden text-xs text-rose-400" data-error-for="loginEmail"></p>
+              </div>
+              <div>
+                <label for="loginPassword" class="block text-sm text-slate-300 mb-1">Password</label>
+                <div class="relative">
+                  <input id="loginPassword" name="password" type="password" required minlength="8"
+                         class="w-full rounded-lg border border-white/10 bg-slate-900/60 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-primary-500/60 px-3 py-2 pr-10" placeholder="Password" />
+                  <button type="button" class="absolute inset-y-0 right-2 grid place-items-center text-slate-400 hover:text-slate-200" data-toggle-password="#loginPassword" aria-label="Toggle password visibility">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5"><path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+                  </button>
+                </div>
+                <p class="mt-1 hidden text-xs text-rose-400" data-error-for="loginPassword"></p>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-2 text-sm text-slate-300">
+                  <input type="checkbox" class="rounded border-white/20 bg-slate-900/60 text-primary-500 focus:ring-primary-500" />
+                  Remember me
+                </label>
+                <a href="#" class="text-sm text-primary-300 hover:text-primary-200">Forgot password?</a>
+              </div>
+
+              <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary-600 to-emerald-600 hover:from-primary-500 hover:to-emerald-500 text-white font-medium px-4 py-2.5 shadow-glow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-primary-500">Sign in</button>
+
+              <div class="text-center text-sm text-slate-300">
+                Don’t have an account? <a data-soft-nav href="{{url_for('reg')}}" class="text-primary-300 hover:text-primary-200">Create one</a>
+              </div>
+            </form>
+
+            <div id="loginSuccess" class="mt-6 hidden rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300">
+              Login successful. Redirecting...
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="relative z-10 py-8">
+      <div class="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <p>© <span id="year"></span> EV Tracker, NIT Warangal</p>
+        <div class="flex items-center gap-4">
+          <a href="#" class="hover:text-slate-200">Docs</a>
+          <a href="#" class="hover:text-slate-200">Support</a>
+          <a href="#" class="hover:text-slate-200">Status</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="{{url_for('static',filename='js/script1.js')}}"></script>
+</body>
+</html>

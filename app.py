@@ -29,64 +29,66 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.secret_key = os.getenv("app_secret_key")    # Required for sessions
 
-db = SQLAlchemy(app)
-"""
-This creates the bridge between your Flask app and your database.
-db gives you tools to:
-    Define models (tables)
-    Run queries
-    Commit changes
-"""
+# # db = SQLAlchemy(app)
+# # """
+# # This creates the bridge between your Flask app and your database.
+# # db gives you tools to:
+# #     Define models (tables)
+# #     Run queries
+# #     Commit changes
+# # """
 
-"""
-SQLAlchemy is an Object-Relational Mapper (ORM), meaning:
-    Each class = one table
-    Each object (instance) = one row
-    Each class attribute = one column
+# # """
+# # SQLAlchemy is an Object-Relational Mapper (ORM), meaning:
+# #     Each class = one table
+# #     Each object (instance) = one row
+# #     Each class attribute = one column
 
-So SQLAlchemy needs one Python class per table to know:
-    What the table is called
-    What columns exist
-    What types they are
-    What relationships (foreign keys) connect them
-"""
+# # So SQLAlchemy needs one Python class per table to know:
+# #     What the table is called
+# #     What columns exist
+# #     What types they are
+# #     What relationships (foreign keys) connect them
+# # """
 
 oauth = OAuth(app)
-
+# The correct Google OpenID configuration URL
+CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
 # -------------------- GOOGLE OAUTH --------------------
 google = oauth.register(
     name='google',
     client_id=os.getenv("google_client_id"),
     client_secret=os.getenv("google_client_secret"),
-    access_token_url='https://accounts.google.com/o/oauth2/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    
+    # This one line replaces all the manual URLs
+    server_metadata_url=CONF_URL,
+    
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# -------------------- MODELS --------------------
+# # -------------------- MODELS --------------------
 
-class Users(db.Model):
-    __tablename__ = "Users"
-    __table_args__ = {'schema': 'Reg'}
+# class Users(db.Model):
+#     __tablename__ = "Users"
+#     __table_args__ = {'schema': 'Reg'}
 
-    username = db.Column(db.String(20), primary_key=True)
-    email = db.Column(db.String(30), unique=True)
-    password = db.Column(db.String(30), nullable=True)
-    role = db.Column(db.String(20))
+#     username = db.Column(db.String(20), primary_key=True)
+#     email = db.Column(db.String(30), unique=True)
+#     password = db.Column(db.String(30), nullable=True)
+#     role = db.Column(db.String(20))
 
-class PreRegistered(db.Model):
-    __tablename__ = "PreRegistered"
-    __table_args__ = {'schema': 'Reg'}
+# class PreRegistered(db.Model):
+#     __tablename__ = "PreRegistered"
+#     __table_args__ = {'schema': 'Reg'}
 
-    email = db.Column(db.String(30), primary_key=True)
-    role = db.Column(db.String(20))
+#     email = db.Column(db.String(30), primary_key=True)
+#     role = db.Column(db.String(20))
 
-# -------------------- ROUTES --------------------
+# # -------------------- ROUTES --------------------
 
 @app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template("login.html")
 
 # Triggered when login button is clicked 
 @app.route('/login_button',methods=['GET','POST'])
@@ -131,11 +133,9 @@ def reg():
 @app.route('/authorize_google')
 def authorize_google():
     token = google.authorize_access_token()
-    resp = google.get('userinfo')
-    user_info = resp.json()
+    user_info = token['userinfo']
     google_email = user_info['email']
     session['google_email'] = google_email  # store in session
-
     # Check if user exists
     user = Users.query.filter_by(email=google_email).first()
     if user:
@@ -192,12 +192,12 @@ def registration2():
 
 @app.route('/Student')
 def student_ui():
-    return render_template("student_ui.html")
+    return render_template("student.html")
 
 @app.route('/Driver')
 def driver_ui():
-    return render_template("driver_ui.html")
+    return render_template("driver.html")
 
 @app.route('/Admin')
 def admin_ui():
-    return render_template("admin_ui.html")
+    return render_template("admin.html")

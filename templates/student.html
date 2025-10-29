@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - EV Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons (Still used for top bar and map) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Using Inter font */
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+        }
+
+        /* FIX: Removed all @apply rules. 
+          Styles are now applied directly via utility classes in the HTML.
+          This simple CSS is for the floating message transitions.
+        */
+        .floating-message {
+            /* Start state: invisible and up */
+            opacity: 0;
+            transform: translate(-50%, -2.5rem); /* -translate-x-1/2 -translate-y-10 */
+            transition: opacity 300ms ease-out, transform 300ms ease-out;
+        }
+
+        .floating-message.show {
+            /* End state: visible and in place */
+            opacity: 1;
+            transform: translate(-50%, 0); /* -translate-x-1/2 translate-y-0 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 overflow-hidden">
+
+    <!-- Map Container -->
+    <div id="mapContainer" class="fixed inset-0 w-full h-screen">
+        <!-- Placeholder for Map API -->
+        <div class="w-full h-full bg-gray-300">
+            <div class="flex items-center justify-center h-full text-gray-500">
+                <div class="text-center">
+                    <i class="fas fa-map-marked-alt text-6xl mb-4"></i>
+                    <p class="text-lg">Map View</p>
+                    <p class="text-sm mt-2">Your map API will render here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-gray-200">
+        <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
+                    <i class="fas fa-car text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-semibold text-gray-900">Campus EV Tracker</h1>
+                    <p class="text-xs text-gray-500">Student Dashboard</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                    <i class="fas fa-bell text-gray-600"></i>
+                </button>
+                <button class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                    <i class="fas fa-user-circle text-gray-600"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Bottom Control Panel -->
+    <div id="controlPanel" class="fixed bottom-0 left-0 right-0 z-40 bg-white/80 supports-[backdrop-filter]:bg-white/60 backdrop-blur-md rounded-t-2xl shadow-2xl border-t border-gray-200">
+        <!-- Compact spacing to maximize map area -->
+        <div class="px-4 pt-3 pb-3 max-w-7xl mx-auto sm:px-6 lg:px-8"> 
+            
+            <!-- Handle bar -->
+            <div class="flex justify-center mb-3">
+                <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+            </div>
+
+            <!-- Ride Info (Shown after request) -->
+            <div id="rideInfo" class="hidden mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-blue-700">Fixed Fare</p>
+                        <p class="text-2xl font-bold text-blue-600">₹10</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-blue-700">Status</p>
+                        <p class="text-lg font-semibold text-blue-600 animate-pulse">Finding Driver...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-3 gap-2">
+                <!-- Request Ride Button -->
+                <!-- Compact buttons to keep panel small -->
+                <button id="requestRideBtn" class="flex flex-col items-center justify-center p-2 rounded-xl text-white text-sm font-semibold transition-all duration-300 ease-in-out shadow-lg transform hover:-translate-y-0.5 
+                                                bg-blue-600 
+                                                disabled:bg-blue-200 disabled:text-blue-500 disabled:cursor-not-allowed disabled:shadow-inner disabled:transform-none">
+                    <svg class="w-5 h-5 mb-1 transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                    </svg>
+                    Request Ride
+                </button>
+                
+                <!-- Accept & Pay Button -->
+                <button id="acceptPayBtn" class="flex flex-col items-center justify-center p-2 rounded-xl text-white text-sm font-semibold transition-all duration-300 ease-in-out shadow-lg transform hover:-translate-y-0.5
+                                              bg-green-600
+                                              disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-inner disabled:transform-none">
+                    <svg class="w-5 h-5 mb-1 transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Accept & Pay
+                </button>
+                
+                <!-- Cancel Ride Button -->
+                <button id="cancelRideBtn" class="flex flex-col items-center justify-center p-2 rounded-xl text-white text-sm font-semibold transition-all duration-300 ease-in-out shadow-lg transform hover:-translate-y-0.5
+                                              bg-red-600
+                                              disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-inner disabled:transform-none">
+                    <svg class="w-5 h-5 mb-1 transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                    Cancel Ride
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Messages -->
+    <div id="successMessage" class="floating-message fixed top-20 left-1/2 z-50 text-white px-6 py-3 rounded-full shadow-lg bg-green-500">
+        <i class="fas fa-check-circle mr-2"></i>Ride Booked Successfully!
+    </div>
+    <div id="cancelMessage" class="floating-message fixed top-20 left-1/2 z-50 text-white px-6 py-3 rounded-full shadow-lg bg-red-500">
+        <i class="fas fa-times-circle mr-2"></i>Ride Cancelled
+    </div>
+    <div id="infoMessage" class="floating-message fixed top-20 left-1/2 z-50 px-6 py-3 rounded-full shadow-lg bg-yellow-500 text-black">
+        <i class="fas fa-info-circle mr-2"></i>Please request a ride first!
+    </div>
+
+    <script>
+        // Get elements
+        const requestRideBtn = document.getElementById('requestRideBtn');
+        const acceptPayBtn = document.getElementById('acceptPayBtn');
+        const cancelRideBtn = document.getElementById('cancelRideBtn');
+        const rideInfo = document.getElementById('rideInfo');
+
+        // Message elements
+        const successMessage = document.getElementById('successMessage');
+        const cancelMessage = document.getElementById('cancelMessage');
+        const infoMessage = document.getElementById('infoMessage');
+        
+        let activeMessageTimer = null;
+
+        // Function to show a floating message
+        function showMessage(element) {
+            // Hide any active message first
+            if (activeMessageTimer) {
+                clearTimeout(activeMessageTimer);
+                document.querySelectorAll('.floating-message').forEach(msg => msg.classList.remove('show'));
+            }
+
+            element.classList.add('show');
+            
+            activeMessageTimer = setTimeout(() => {
+                element.classList.remove('show');
+                activeMessageTimer = null;
+            }, 2500); // Message disappears after 2.5 seconds
+        }
+
+        // Event Listeners
+        requestRideBtn.addEventListener('click', () => {
+            if (requestRideBtn.disabled) return;
+
+            // Simulate finding a ride
+            // Show ride info
+            rideInfo.classList.remove('hidden');
+            
+            // Enable/disable buttons
+            acceptPayBtn.disabled = false;
+            cancelRideBtn.disabled = false;
+            requestRideBtn.disabled = true; // Disable request button
+        });
+
+        acceptPayBtn.addEventListener('click', () => {
+            if (acceptPayBtn.disabled) {
+                showMessage(infoMessage);
+                return;
+            }
+            // Simulate successful booking
+            showMessage(successMessage);
+            
+            // Reset UI to initial state after the message fades
+            setTimeout(resetToInitialState, 2500);
+        });
+
+        cancelRideBtn.addEventListener('click', () => {
+             if (cancelRideBtn.disabled) {
+                showMessage(infoMessage);
+                return;
+            }
+            // Simulate ride cancellation
+            showMessage(cancelMessage);
+            resetToInitialState();
+        });
+
+        // Function to reset the UI
+        function resetToInitialState() {
+            // Hide ride info
+            rideInfo.classList.add('hidden');
+            
+            // Enable request button
+            requestRideBtn.disabled = false;
+            
+            // Disable other buttons
+            acceptPayBtn.disabled = true;
+            cancelRideBtn.disabled = true;
+        }
+
+        // Set initial state on load
+        document.addEventListener('DOMContentLoaded', resetToInitialState);
+    </script>
+</body>
+</html>
+
