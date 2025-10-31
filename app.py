@@ -9,7 +9,6 @@ load_dotenv()
 # Build ODBC connection string safely
 params = urllib.parse.quote_plus(
     f"Driver={{ODBC Driver 17 for SQL Server}};"
-    f"Driver={{ODBC Driver 17 for SQL Server}};"
     f"Server={os.getenv('DB_SERVER')};"
     f"Database={os.getenv('DB_NAME')};"
     f"Uid={os.getenv('DB_USER')};"
