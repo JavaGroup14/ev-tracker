@@ -79,9 +79,6 @@ google = oauth.register(
 class Users(db.Model):
     __tablename__ = "Users"
     __table_args__ = {'schema': 'Reg'}
-class Users(db.Model):
-    __tablename__ = "Users"
-    __table_args__ = {'schema': 'Reg'}
 
     username = db.Column(db.String(20), primary_key=True)
     email = db.Column(db.String(30), unique=True)
@@ -92,9 +89,6 @@ class Users(db.Model):
     password = db.Column(db.String(30), nullable=True)
     role = db.Column(db.String(20))
 
-class PreRegistered(db.Model):
-    __tablename__ = "PreRegistered"
-    __table_args__ = {'schema': 'Reg'}
 class PreRegistered(db.Model):
     __tablename__ = "PreRegistered"
     __table_args__ = {'schema': 'Reg'}
