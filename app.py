@@ -9,6 +9,7 @@ load_dotenv()
 # Build ODBC connection string safely
 params = urllib.parse.quote_plus(
     f"Driver={{ODBC Driver 17 for SQL Server}};"
+    f"Driver={{ODBC Driver 17 for SQL Server}};"
     f"Server={os.getenv('DB_SERVER')};"
     f"Database={os.getenv('DB_NAME')};"
     f"Uid={os.getenv('DB_USER')};"
@@ -79,7 +80,14 @@ google = oauth.register(
 class Users(db.Model):
     __tablename__ = "Users"
     __table_args__ = {'schema': 'Reg'}
+class Users(db.Model):
+    __tablename__ = "Users"
+    __table_args__ = {'schema': 'Reg'}
 
+    username = db.Column(db.String(20), primary_key=True)
+    email = db.Column(db.String(30), unique=True)
+    password = db.Column(db.String(30), nullable=True)
+    role = db.Column(db.String(20))
     username = db.Column(db.String(20), primary_key=True)
     email = db.Column(db.String(30), unique=True)
     password = db.Column(db.String(30), nullable=True)
@@ -88,7 +96,12 @@ class Users(db.Model):
 class PreRegistered(db.Model):
     __tablename__ = "PreRegistered"
     __table_args__ = {'schema': 'Reg'}
+class PreRegistered(db.Model):
+    __tablename__ = "PreRegistered"
+    __table_args__ = {'schema': 'Reg'}
 
+    email = db.Column(db.String(30), primary_key=True)
+    role = db.Column(db.String(20))
     email = db.Column(db.String(30), primary_key=True)
     role = db.Column(db.String(20))
 
