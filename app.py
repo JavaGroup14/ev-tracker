@@ -96,36 +96,36 @@ class Student(db.Model):
     __tablename__ = "Student"
     __table_args__ = {'schema':'Loc'}
 
-    username = db.Column(db.string(20),primary_key=True)
+    username = db.Column(db.String(20), db.ForeignKey('Reg.Users.username'), primary_key=True)
     latitude = db.Column(db.Numeric(9,6),nullable=False)
     longitude = db.Column(db.Numeric(9,6),nullable=False)
-    status = db.Column(db.string(20),nullable=False)
+    status = db.Column(db.String(20),nullable=False)
 
 class Driver(db.Model):
     __tablename__ = "Driver"
     __table_args__ = {'schema':'Loc'}
 
-    username = db.Column(db.string(20),primary_key=True)
+    username = db.Column(db.String(20), db.ForeignKey('Reg.Users.username'), primary_key=True)
     latitude = db.Column(db.Numeric(9,6),nullable=False)
     longitude = db.Column(db.Numeric(9,6),nullable=False)
-    status = db.Column(db.string(20),nullable=False)
+    status = db.Column(db.String(20),nullable=False)
 
 class Driver_work_log(db.Model):
     __tablename__ = "Driver_work_log"
     __table_args__ = {'schema':'Work'}
 
-    username = db.Column(db.string(20),primary_key=True)
+    username = db.Column(db.String(20),primary_key=True)
     curr_date = db.Column(db.Date,nullable=False)
-    start_time = db.Column(db.Time(7),nullable=False)
-    end_time = db.Column(db.Time(7),nullable=False)
+    start_time = db.Column(db.Time,nullable=False)
+    end_time = db.Column(db.Time,nullable=False)
 
-class Driver_work_log(db.Model):
+class Payment_log(db.Model):
     __tablename__ = "Payment_log"
     __table_args__ = {'schema':'Work'}
 
     payment_id = db.Column(db.Integer,primary_key=True)
-    username = db.Column(db.string(20))
-    curr_date_time = db.Column(db.Datetime,nullable=False)
+    username = db.Column(db.String(20))
+    curr_date_time = db.Column(db.DateTime,nullable=False)
     amount = db.Column(db.Numeric(10,2),nullable=False)
 
 # # -------------------- ROUTES --------------------
@@ -140,7 +140,7 @@ def login():
     username = request.form.get('username')
     password = request.form.get('password')
     # check in our users table whether this is registered and correct 
-    user = Users.query.filter_by(username=username)
+    user = Users.query.filter_by(username=username).first()
     if user:
         if user.password == password:
             # Password matches, set session and redirect based on role
