@@ -135,7 +135,7 @@ def login():
 # login by google button triggers this route
 @app.route('/login_google')
 def login_google():
-    redirect_uri = url_for('authorize_google',_external=True)
+    redirect_uri = "https://disconnected-babette-trivially.ngrok-free.dev/authorize_google"
     return google.authorize_redirect(redirect_uri)
 
 # Triggered when you click the link "don't have an account?"
