@@ -81,16 +81,52 @@ class Users(db.Model):
     __table_args__ = {'schema': 'Reg'}
 
     username = db.Column(db.String(20), primary_key=True)
-    email = db.Column(db.String(30), unique=True)
-    password = db.Column(db.String(30), nullable=True)
-    role = db.Column(db.String(20))
+    email = db.Column(db.String(100), unique=True)
+    password = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20),nullable=False)
 
 class PreRegistered(db.Model):
     __tablename__ = "PreRegistered"
     __table_args__ = {'schema': 'Reg'}
 
-    email = db.Column(db.String(30), primary_key=True)
-    role = db.Column(db.String(20))
+    email = db.Column(db.String(100), primary_key=True)
+    role = db.Column(db.String(20),nullable=False)
+
+class Student(db.Model):
+    __tablename__ = "Student"
+    __table_args__ = {'schema':'Loc'}
+
+    username = db.Column(db.string(20),primary_key=True)
+    latitude = db.Column(db.Numeric(9,6),nullable=False)
+    longitude = db.Column(db.Numeric(9,6),nullable=False)
+    status = db.Column(db.string(20),nullable=False)
+
+class Driver(db.Model):
+    __tablename__ = "Driver"
+    __table_args__ = {'schema':'Loc'}
+
+    username = db.Column(db.string(20),primary_key=True)
+    latitude = db.Column(db.Numeric(9,6),nullable=False)
+    longitude = db.Column(db.Numeric(9,6),nullable=False)
+    status = db.Column(db.string(20),nullable=False)
+
+class Driver_work_log(db.Model):
+    __tablename__ = "Driver_work_log"
+    __table_args__ = {'schema':'Work'}
+
+    username = db.Column(db.string(20),primary_key=True)
+    curr_date = db.Column(db.Date,nullable=False)
+    start_time = db.Column(db.Time(7),nullable=False)
+    end_time = db.Column(db.Time(7),nullable=False)
+
+class Driver_work_log(db.Model):
+    __tablename__ = "Payment_log"
+    __table_args__ = {'schema':'Work'}
+
+    payment_id = db.Column(db.Integer,primary_key=True)
+    username = db.Column(db.string(20))
+    curr_date_time = db.Column(db.Datetime,nullable=False)
+    amount = db.Column(db.Numeric(10,2),nullable=False)
 
 # # -------------------- ROUTES --------------------
 
