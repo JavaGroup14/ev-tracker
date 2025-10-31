@@ -8,7 +8,7 @@ load_dotenv()
 
 # Build ODBC connection string safely
 params = urllib.parse.quote_plus(
-    f"Driver={{ODBC Driver 18 for SQL Server}};"
+    f"Driver={{ODBC Driver 17 for SQL Server}};"
     f"Server={os.getenv('DB_SERVER')};"
     f"Database={os.getenv('DB_NAME')};"
     f"Uid={os.getenv('DB_USER')};"
@@ -16,6 +16,12 @@ params = urllib.parse.quote_plus(
     f"Encrypt=yes;"
     f"TrustServerCertificate=no;"
 )
+
+"""
+# Run this to check installed sql server drivers in your devices.
+import pyodbc
+print(pyodbc.drivers())
+"""
 
 app=Flask(__name__)
 
@@ -29,31 +35,33 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.secret_key = os.getenv("app_secret_key")    # Required for sessions
 
-# # db = SQLAlchemy(app)
-# # """
-# # This creates the bridge between your Flask app and your database.
-# # db gives you tools to:
-# #     Define models (tables)
-# #     Run queries
-# #     Commit changes
-# # """
+db = SQLAlchemy(app)
+"""
+This creates the bridge between your Flask app and your database.
+db gives you tools to:
+    Define models (tables)
+    Run queries
+    Commit changes
+"""
 
-# # """
-# # SQLAlchemy is an Object-Relational Mapper (ORM), meaning:
-# #     Each class = one table
-# #     Each object (instance) = one row
-# #     Each class attribute = one column
+"""
+SQLAlchemy is an Object-Relational Mapper (ORM), meaning:
+    Each class = one table
+    Each object (instance) = one row
+    Each class attribute = one column
 
-# # So SQLAlchemy needs one Python class per table to know:
-# #     What the table is called
-# #     What columns exist
-# #     What types they are
-# #     What relationships (foreign keys) connect them
-# # """
+So SQLAlchemy needs one Python class per table to know:
+    What the table is called
+    What columns exist
+    What types they are
+    What relationships (foreign keys) connect them
+"""
 
 oauth = OAuth(app)
-# The correct Google OpenID configuration URL
+
+# It’s a fixed public URL provided by Google that contains all OAuth-related URLs (like authorization, token, and userinfo endpoints).
 CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
+
 # -------------------- GOOGLE OAUTH --------------------
 google = oauth.register(
     name='google',
@@ -68,21 +76,21 @@ google = oauth.register(
 
 # # -------------------- MODELS --------------------
 
-# class Users(db.Model):
-#     __tablename__ = "Users"
-#     __table_args__ = {'schema': 'Reg'}
+class Users(db.Model):
+    __tablename__ = "Users"
+    __table_args__ = {'schema': 'Reg'}
 
-#     username = db.Column(db.String(20), primary_key=True)
-#     email = db.Column(db.String(30), unique=True)
-#     password = db.Column(db.String(30), nullable=True)
-#     role = db.Column(db.String(20))
+    username = db.Column(db.String(20), primary_key=True)
+    email = db.Column(db.String(30), unique=True)
+    password = db.Column(db.String(30), nullable=True)
+    role = db.Column(db.String(20))
 
-# class PreRegistered(db.Model):
-#     __tablename__ = "PreRegistered"
-#     __table_args__ = {'schema': 'Reg'}
+class PreRegistered(db.Model):
+    __tablename__ = "PreRegistered"
+    __table_args__ = {'schema': 'Reg'}
 
-#     email = db.Column(db.String(30), primary_key=True)
-#     role = db.Column(db.String(20))
+    email = db.Column(db.String(30), primary_key=True)
+    role = db.Column(db.String(20))
 
 # # -------------------- ROUTES --------------------
 
@@ -121,7 +129,7 @@ def login():
 # login by google button triggers this route
 @app.route('/login_google')
 def login_google():
-    redirect_uri = url_for('authorize_google', _external=True)
+    redirect_uri = url_for('authorize_google',_external=True)
     return google.authorize_redirect(redirect_uri)
 
 # Triggered when you click the link "don't have an account?"
@@ -156,7 +164,7 @@ def registration2():
     if request.method == 'POST':
         form_username = request.form['username']
         selected_role = request.form['role']  # student/driver/admin
-        raw_password = request.form.get('password')  # optional
+        raw_password = request.form['password'] 
         google_email = session.get('google_email')
 
         # 1. Check username uniqueness
