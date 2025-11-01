@@ -37,6 +37,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.secret_key = os.getenv("app_secret_key")    # Required for sessions
 
+# --- ADD THESE TWO LINES ---
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 
 # --- 2. Gmail Credentials ---
 GMAIL_USER = "your-email@gmail.com"
@@ -172,13 +175,12 @@ def login():
 # login by google button triggers this route
 @app.route('/login_google')
 def login_google():
-    redirect_uri = "https://disconnected-babette-trivially.ngrok-free.dev/authorize_google"
+    redirect_uri = os.getenv("REDIRECT_URI")
     return google.authorize_redirect(redirect_uri)
 
 # Triggered when you click the link "don't have an account?"
 @app.route('/registration')
 def reg():
-
     return render_template("registration.html")
 
 # Callback route Google redirects to
