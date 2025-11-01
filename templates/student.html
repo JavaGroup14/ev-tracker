@@ -9,9 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhOINL/PMJ0GacVtL1LBFWyqRRA5CVC1OQog="
-     crossorigin=""/>
     <style>
         /* Using Inter font */
         body { 
@@ -127,9 +124,6 @@
     <div id="infoMessage" class="floating-message fixed top-20 left-1/2 z-50 px-6 py-2.5 rounded-full shadow-lg bg-slate-900/80 text-yellow-200 border border-yellow-500/30">
         <i class="fas fa-info-circle mr-2"></i>Please request a ride first!
     </div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
     <script>
         // --- THIS IS THE FIX ---
         // Wait for the entire HTML document and layout to be ready
@@ -137,21 +131,6 @@
             
             // --- All your JavaScript code now lives inside here ---
 
-            // Initialize the map (using NIT Warangal coordinates)
-            var map = L.map('mapContainer').setView([17.9840, 79.5310], 16);
-
-            // Add OpenStreetMap tile layer
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-
-            // (Optional) Add a marker
-            
-            
-            // (Optional) Add a popup to the marker
-            marker.bindPopup("<b>NIT Warangal</b><br>Main Building").openPopup();
-            
             // Get elements
             const requestRideBtn = document.getElementById('requestRideBtn');
             const acceptPayBtn = document.getElementById('acceptPayBtn');

@@ -5,12 +5,17 @@
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   const form = $('#registrationForm');
+  const otpForm = $('#otpForm');
   const successEl = $('#formSuccess');
   const yearEl = $('#year');
   const passwordInput = $('#password');
   const confirmPasswordInput = $('#confirmPassword');
   const passwordStrengthBar = $('#passwordStrength');
   const roleInput = $('#role');
+  const backToRegistrationBtn = $('#backToRegistrationBtn');
+  const resendOtpBtn = $('#resendOtpBtn');
+  const otpInput = $('#otp');
+  const otpEmailDisplay = $('#otpEmailDisplay');
 
   const loginForm = $('#loginForm');
   const loginSuccessEl = $('#loginSuccess');
@@ -129,11 +134,11 @@
     input.classList.remove('ring-2', 'ring-rose-500/60', 'border-rose-500/60');
   }
 
-  function validateEmail(value) {
-    // Allow typical .ac.in or .edu domains; prefer nitw.ac.in
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return pattern.test(value) && /nitw\.ac\.in$/i.test(value);
-  }
+function validateEmail(value) {
+  // Checks for a general email pattern: local-part@domain
+  const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return pattern.test(value);
+}
 
   function passwordScore(value) {
     let score = 0;
@@ -162,7 +167,7 @@
     clearError(input);
     const value = (input.value || '').trim();
 
-    if (input.id === 'firstName' || input.id === 'lastName') {
+    if (input.id === 'firstName' || input.id === 'lastName' || input.id === 'username') {
       if (value.length === 0) {
         setError(input, 'This field is required.');
         return false;
@@ -176,7 +181,7 @@
 
     if (input.id === 'email') {
       if (!validateEmail(value)) {
-        setError(input, 'Use your NITW email (e.g., name@nitw.ac.in).');
+        setError(input, 'Use a valid email');
         return false;
       }
       return true;
@@ -218,6 +223,18 @@
       return true;
     }
 
+    if (input.id === 'otp') {
+      if (value.length === 0) {
+        setError(input, 'Please enter the OTP.');
+        return false;
+      }
+      if (!/^\d{6}$/.test(value)) {
+        setError(input, 'OTP must be 6 digits.');
+        return false;
+      }
+      return true;
+    }
+
     return true;
   }
 
@@ -231,13 +248,25 @@
     input.addEventListener('input', () => clearError(input));
   });
 
+  // Live validation for OTP form
+  if (otpInput) {
+    otpInput.addEventListener('blur', () => validateField(otpInput));
+    otpInput.addEventListener('input', () => {
+      // Only allow digits
+      otpInput.value = otpInput.value.replace(/\D/g, '');
+      clearError(otpInput);
+    });
+  }
+
+  // Store form data temporarily for account creation after OTP verification
+  let storedFormData = null;
+
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const inputs = [
-        $('#firstName'),
-        $('#lastName'),
+        $('#username'),
         $('#email'),
         $('#password'),
         $('#confirmPassword'),
@@ -256,19 +285,97 @@
       const submitBtn = form.querySelector('button[type="submit"]');
       const prevText = submitBtn.innerHTML;
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10"/></svg> Creating...';
+      submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10"/></svg> Sending OTP...';
 
       try {
         await new Promise((res) => setTimeout(res, 900));
-        successEl?.classList.remove('hidden');
-        form.reset();
-        updatePasswordStrength();
+        
+        // Store form data for later use
+        storedFormData = {
+          username: $('#username').value,
+          email: $('#email').value,
+          password: $('#password').value,
+          role: $('#role').value
+        };
+
+        // Show OTP form
+        form.classList.add('hidden');
+        otpForm.classList.remove('hidden');
+        otpEmailDisplay.textContent = storedFormData.email;
+        otpInput.focus();
       } catch (err) {
         // In real integration, handle API errors here
         console.error(err);
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = prevText;
+      }
+    });
+  }
+
+  // OTP form submission handler
+  if (otpForm) {
+    otpForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateField(otpInput)) return;
+
+      const submitBtn = otpForm.querySelector('button[type="submit"]');
+      const prevText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10"/></svg> Creating account...';
+
+      try {
+        await new Promise((res) => setTimeout(res, 900));
+        successEl?.classList.remove('hidden');
+        form.reset();
+        updatePasswordStrength();
+        otpForm.reset();
+        
+        // Reset after showing success message
+        setTimeout(() => {
+          otpForm.classList.add('hidden');
+          form.classList.remove('hidden');
+          storedFormData = null;
+        }, 3000);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = prevText;
+      }
+    });
+  }
+
+  // Back to registration button
+  if (backToRegistrationBtn) {
+    backToRegistrationBtn.addEventListener('click', () => {
+      otpForm.classList.add('hidden');
+      form.classList.remove('hidden');
+      otpInput.value = '';
+      clearError(otpInput);
+    });
+  }
+
+  // Resend OTP button
+  if (resendOtpBtn) {
+    resendOtpBtn.addEventListener('click', async () => {
+      if (!storedFormData) return;
+
+      resendOtpBtn.disabled = true;
+      resendOtpBtn.textContent = 'Sending...';
+
+      try {
+        await new Promise((res) => setTimeout(res, 500));
+        resendOtpBtn.textContent = 'OTP sent!';
+        setTimeout(() => {
+          resendOtpBtn.textContent = "Didn't receive? Resend OTP";
+          resendOtpBtn.disabled = false;
+        }, 2000);
+      } catch (err) {
+        console.error(err);
+        resendOtpBtn.textContent = "Didn't receive? Resend OTP";
+        resendOtpBtn.disabled = false;
       }
     });
   }

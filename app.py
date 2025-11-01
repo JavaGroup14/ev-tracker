@@ -1,8 +1,10 @@
-from flask import Flask, redirect, url_for, session, request, render_template
+from flask import Flask, redirect, url_for, session, request, render_template,jsonify
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import os, urllib
+import smtplib,ssl,random,time
+from email.message import EmailMessage
 
 load_dotenv()
 
@@ -34,6 +36,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 """
 
 app.secret_key = os.getenv("app_secret_key")    # Required for sessions
+
+
+# --- 2. Gmail Credentials ---
+GMAIL_USER = "your-email@gmail.com"
+GMAIL_APP_PASSWORD = "your-16-character-app-password"
 
 db = SQLAlchemy(app)
 """
@@ -171,6 +178,7 @@ def login_google():
 # Triggered when you click the link "don't have an account?"
 @app.route('/registration')
 def reg():
+
     return render_template("registration.html")
 
 # Callback route Google redirects to
