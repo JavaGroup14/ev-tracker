@@ -215,13 +215,13 @@ def registration2():
 
         # 1. Check username uniqueness
         if Users.query.filter_by(username=form_username).first():
-            return "Username already taken. Choose another.", 400
+            return jsonify({"success":False,"error":"Username already taken"}), 400
 
         # 2. PreRegistered check for driver/admin
         if selected_role in ['driver', 'admin']:
             pre = PreRegistered.query.filter_by(email=google_email, role=selected_role).first()
             if not pre:
-                return "Email not authorized for this role", 400
+                return jsonify({"success":False,"error":"Email not authorized for this role"}), 400
 
         # 3. Save new user (password stored as plain text or optional)
         new_user = Users(
@@ -235,11 +235,11 @@ def registration2():
 
         # 4. Redirect based on role
         if selected_role == 'student':
-            return redirect('/Student')
+            return jsonify({"success":True,"redirect_url":url_for('student_ui')})
         elif selected_role == 'driver':
-            return redirect('/Driver')
+            return jsonify({"success":True,"redirect_url":url_for('driver_ui')})
         else:
-            return redirect('/Admin')
+            return jsonify({"success":True,"redirect_url":url_for('admin_ui')})
 
     # GET request → show registration form
     return render_template("registration2.html")

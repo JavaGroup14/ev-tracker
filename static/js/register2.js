@@ -250,23 +250,52 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10"/></svg> Creating account...';
 
-      try {
-        await new Promise((res) => setTimeout(res, 900));
+    try {
+        // 1. Get the form data
+        const formData = new FormData(form);
         
-        // Show success message
+        // 2. Send the data to your Flask server
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData
+        });
+        
+        // 3. Get the JSON response back from Flask
+        const data = await response.json();
+        
+        if (!response.ok) {
+            // Server returned an error (e.g., "Username taken")
+            // Show the error from Flask. We'll assume the error is for the 'username'
+            setError($('#username'), data.error || 'An unknown error occurred');
+            throw new Error(data.error); // Stop and go to the 'finally' block
+        }
+        
+        // --- SUCCESS! ---
+        
+        // 4. Show the "Registration successful" message
         successEl?.classList.remove('hidden');
         form.reset();
         updatePasswordStrength();
         
-        // Reset after showing success message
+        // 5. Start the page transition and redirect to the student page
+        startTransition(e.clientX, e.clientY); // Start your cool page transition
         setTimeout(() => {
-          successEl?.classList.add('hidden');
-        }, 3000);
+            // Use the URL that Flask sent back
+            window.location.href = data.redirect_url;
+        }, 900); // Wait 900ms for the message to show
+
       } catch (err) {
+        // This catches network errors or the error we threw
         console.error(err);
+        // Re-enable the button in the 'finally' block
       } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = prevText;
+        // Re-enable the button *unless* we are redirecting
+        // We'll let the button stay disabled since we are navigating away
+        // If there was an error, re-enable it.
+        if (successEl?.classList.contains('hidden')) {
+             submitBtn.disabled = false;
+             submitBtn.innerHTML = prevText;
+        }
       }
     });
   }
