@@ -4,385 +4,410 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver Dashboard - EV Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{url_for('static',filename='css/styles.css')}}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
         }
-        
-        /* Custom animations for driver dashboard */
-        @keyframes slideUp {
-            from {
-                transform: translateY(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
         }
-        
-        @keyframes slideDown {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+
+        /* Dropdown styling */
+        .destination-dropdown {
+            position: relative;
         }
-        
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 8px;
+            background-color: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 192px; /* Search input (~48px) + 3 items (144px) */
+            overflow: hidden;
         }
-        
-        /* Panel animations */
-        #activeRidePanel.show,
-        #earningsPanel.show,
-        #vehiclesPanel.show {
-            animation: slideUp 0.3s ease-out;
+
+        .dropdown-content.show {
+            display: block;
         }
-        
-        #incomingRideAlert.show {
-            animation: slideDown 0.3s ease-out;
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: transparent;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
         }
-        
-        /* Toast notification animation */
-        #notificationToast.show {
-            animation: slideDown 0.3s ease-out;
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
         }
-        
-        /* Map container styling */
-        #mapContainer {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        .search-input:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.05);
         }
-        
-        /* Online toggle glow effect */
-        .peer-checked ~ .peer {
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+
+        .dropdown-items {
+            max-height: 144px; /* Show only 3 items (48px each) */
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(42, 166, 255, 0.5) transparent;
         }
-        
-        /* Button hover effects */
-        button {
-            transition: all 0.2s ease;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        /* Incoming ride alert highlight */
-        #incomingRideAlert {
-            border: 2px solid #f97316;
-            animation: pulse 2s infinite;
-        }
-        
-        /* Earnings cards hover effect */
-        #earningsPanel .bg-blue-50:hover,
-        #earningsPanel .bg-green-50:hover,
-        #earningsPanel .bg-purple-50:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        /* Status badge animation */
-        #rideStatus {
-            animation: pulse 1.5s infinite;
-        }
-        
-        /* Custom scrollbar for panels */
-        .overflow-y-auto::-webkit-scrollbar {
+
+        .dropdown-items::-webkit-scrollbar {
             width: 6px;
         }
-        
-        .overflow-y-auto::-webkit-scrollbar-track {
-            background: #f1f1f1;
+
+        .dropdown-items::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .dropdown-items::-webkit-scrollbar-thumb {
+            background-color: rgba(42, 166, 255, 0.5);
+            border-radius: 3px;
+        }
+
+        .dropdown-items::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(42, 166, 255, 0.7);
+        }
+
+        .dropdown-item {
+            min-height: 48px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .dropdown-item:hover {
+            background-color: rgba(42, 166, 255, 0.2);
+        }
+
+        .selected-destination {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(42, 166, 255, 0.2);
+            color: white;
+            padding: 10px 16px;
             border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            border: 1px solid rgba(42, 166, 255, 0.3);
         }
-        
-        .overflow-y-auto::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
+
+        .selected-destination.show {
+            opacity: 1;
         }
-        
-        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-        
-        /* Smooth transitions for all panels */
-        .transition-all {
-            transition-property: all;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
-        }
-        
-        /* Loading state for buttons */
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        
-        /* Mobile responsive adjustments */
-        @media (max-width: 640px) {
-            #incomingRideAlert {
-                top: 80px;
-            }
+
+        #chevronIcon {
+            transition: transform 0.3s ease;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-slate-950 text-slate-100">
+    <div id="appWrapper" class="h-screen w-full flex flex-col overflow-hidden">
+        <nav class="bg-slate-900/70 supports-[backdrop-filter]:bg-slate-900/50 backdrop-blur border-b border-white/10">
+            <div class="flex flex-col gap-3 px-4 py-3 max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-emerald-500 rounded-xl p-[2px] shadow-md">
+                            <div class="w-full h-full rounded-[10px] bg-slate-950 grid place-items-center">
+                                <i class="fas fa-car text-primary-200"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h1 class="text-base font-semibold text-white">Campus EV Tracker</h1>
+                            <p class="text-[10px] uppercase tracking-wider text-slate-400">Driver Dashboard</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-slate-200 flex items-center justify-center transition-colors border border-white/10">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                        <button class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-slate-200 flex items-center justify-center transition-colors border border-white/10">
+                            <i class="fas fa-user-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
 
-    <!-- Map Container -->
-    <div id="mapContainer" class="fixed inset-0 w-full h-screen">
-        <!-- Map will be rendered here via your API -->
-        <div class="w-full h-full bg-gray-300">
-            <div class="flex items-center justify-center h-full text-gray-500">
-                <div class="text-center">
-                    <i class="fas fa-map-marked-alt text-6xl mb-4"></i>
-                    <p class="text-lg">Map View</p>
-                    <p class="text-sm mt-2">Your map API will render here</p>
+        <!-- Destination Search Bar Container -->
+        <div class="px-4 py-3 bg-slate-900/50 border-b border-white/10">
+            <div class="max-w-7xl mx-auto">
+                <div class="destination-dropdown" style="max-width: 400px;">
+                    <button id="destinationBtn" class="w-full rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-medium px-4 py-3 shadow-lg transition-all duration-200 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-search"></i>
+                            <span id="destinationBtnText">Search Campus Location</span>
+                        </span>
+                        <i class="fas fa-chevron-down transition-transform" id="chevronIcon"></i>
+                    </button>
+                    <div class="dropdown-content" id="dropdownContent">
+                        <input type="text" id="searchInput" placeholder="Search location..." class="search-input">
+                        <div class="dropdown-items" id="dropdownItems"></div>
+                    </div>
+                    <div class="selected-destination" id="selectedDestination"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mapContainer" class="flex-1 relative overflow-hidden">
+            <!-- Status indicator -->
+            <div class="absolute top-4 right-4 z-[1000] bg-slate-900/90 backdrop-blur-md rounded-xl shadow-2xl p-3 flex gap-4 items-center border border-white/10">
+                <div class="flex items-center gap-2">
+                    <span id="availabilityDot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="availabilityText" class="text-sm font-medium text-white">Vacant</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="statusDot" class="w-3 h-3 rounded-full bg-red-500"></span>
+                    <span id="statusText" class="text-sm font-medium text-white">Offline</span>
+                </div>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <div id="controlPanel" class="bg-slate-900/80 supports-[backdrop-filter]:bg-slate-900/60 backdrop-blur-md rounded-t-2xl shadow-2xl border-t border-white/10">
+            <div class="px-4 pt-3 pb-3 max-w-7xl mx-auto sm:px-6 lg:px-8"> 
+                <div class="flex justify-center mb-3">
+                    <div class="w-10 h-1 bg-white/30 rounded-full"></div>
+                </div>
+
+                <!-- Control buttons -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="availabilityBtn" class="flex flex-col items-center justify-center p-4 rounded-xl text-white text-sm font-semibold transition-all duration-200 ease-in-out shadow-lg transform hover:-translate-y-0.5 bg-emerald-600 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
+                        <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                        Vacant
+                    </button>
+                    
+                    <button id="statusBtn" class="flex flex-col items-center justify-center p-4 rounded-xl text-red-200 text-sm font-semibold transition-all duration-200 ease-in-out shadow-lg transform hover:-translate-y-0.5 bg-red-600/90 hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40">
+                        <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Offline
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Top Control Bar -->
-    <div class="fixed top-4 left-4 right-4 z-50">
-        <div class="bg-white rounded-2xl shadow-lg px-4 py-3">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-car text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-lg font-semibold text-gray-900">Driver Mode</h1>
-                        <p class="text-xs text-gray-500" id="statusText">Offline</p>
-                    </div>
-                </div>
-                <!-- Online/Offline Toggle -->
-                <div class="flex items-center gap-3">
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="onlineToggle" class="sr-only peer">
-                    <div class="w-14 h-8 bg-gray-300 rounded-full peer peer-checked:bg-green-600 peer-transition-colors duration-300">
-                        <div class="w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-6 mt-1 ml-1"></div>
-                    </div>
-                </label>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Incoming Ride Alert (shown when ride request comes) -->
-    <div id="incomingRideAlert" class="fixed inset-x-4 top-20 z-50 bg-white rounded-2xl shadow-2xl hidden">
-        <div class="p-6">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex-1">
-                    <div class="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium mb-2">
-                        <i class="fas fa-bell animate-pulse"></i>
-                        New Ride Request
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Pickup Request</h3>
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-2 text-gray-700">
-                            <i class="fas fa-map-marker-alt text-green-600"></i>
-                            <span id="pickupLocation">College Gate, Main Entrance</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-gray-700">
-                            <i class="fas fa-flag text-blue-600"></i>
-                            <span id="dropLocation">Shopping Mall, City Center</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-gray-700">
-                            <i class="fas fa-ruler-combined"></i>
-                            <span>Distance: 5.2 km</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-gray-700">
-                            <i class="fas fa-rupee-sign"></i>
-                            <span class="font-semibold">Fare: ₹150</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex gap-3">
-                <button id="acceptRideBtn" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                    <i class="fas fa-check mr-2"></i>Accept
-                </button>
-                <button id="declineRideBtn" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors">
-                    <i class="fas fa-times mr-2"></i>Decline
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Active Ride Panel (shown when driver has active ride) -->
-    <div id="activeRidePanel" class="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-3xl shadow-2xl hidden">
-        <div class="px-6 pt-4 pb-6">
-            <div class="flex justify-center mb-4">
-                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
-            </div>
-            
-            <div class="mb-4">
-                <div class="flex items-center justify-center gap-2 mb-3">
-                    <span id="rideStatus" class="bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-medium">Pickup</span>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900 text-center mb-3" id="passengerName">Passenger: Ramesh</h3>
-            </div>
-
-            <div class="space-y-3 mb-4">
-                <div class="p-4 bg-green-50 rounded-xl border-2 border-green-200">
-                    <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-map-marker-alt text-white"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-green-900 mb-1">Pickup Location</p>
-                            <p class="text-gray-900" id="pickupLocationText">College Gate</p>
-                            <p class="text-xs text-gray-600 mt-1" id="pickupDistance">1.2 km away</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-4 bg-blue-50 rounded-xl">
-                    <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-flag text-white"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-blue-900 mb-1">Drop Location</p>
-                            <p class="text-gray-900" id="dropLocationText">Shopping Mall</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex gap-3 mb-4">
-                <button class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-                    <i class="fas fa-phone mr-2"></i>Call Passenger
-                </button>
-                <button id="cancelRideBtn" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors">
-                    <i class="fas fa-times mr-2"></i>Cancel
-                </button>
-            </div>
-
-            <button id="completeRideBtn" class="w-full bg-green-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-700 transition-colors hidden">
-                <i class="fas fa-check-circle mr-2"></i>Mark as Completed
-            </button>
-        </div>
-    </div>
-
-    <!-- Earnings Summary Panel (shown when offline) -->
-    <div id="earningsPanel" class="fixed bottom-0 left-0 right-0 z-30 bg-white rounded-t-3xl shadow-2xl">
-        <div class="px-6 pt-4 pb-6">
-            <div class="flex justify-center mb-4">
-                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Today's Summary</h3>
-            <div class="grid grid-cols-3 gap-4 mb-4">
-                <div class="text-center p-3 bg-blue-50 rounded-xl">
-                    <p class="text-2xl font-bold text-blue-600">12</p>
-                    <p class="text-xs text-gray-600">Rides</p>
-                </div>
-                <div class="text-center p-3 bg-green-50 rounded-xl">
-                    <p class="text-2xl font-bold text-green-600">₹1,850</p>
-                    <p class="text-xs text-gray-600">Earnings</p>
-                </div>
-                <div class="text-center p-3 bg-purple-50 rounded-xl">
-                    <p class="text-2xl font-bold text-purple-600">95 km</p>
-                    <p class="text-xs text-gray-600">Distance</p>
-                </div>
-            </div>
-            <div class="text-center text-sm text-gray-500">
-                Turn on to start receiving ride requests
-            </div>
-        </div>
-    </div>
-
-    <!-- Notification Toast -->
-    <div id="notificationToast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-2xl rounded-xl px-6 py-4 hidden">
-        <div class="flex items-center gap-3">
-            <i id="toastIcon" class="fas fa-info-circle text-blue-600 text-xl"></i>
-            <p id="toastMessage" class="text-gray-900 font-medium">Message here</p>
-        </div>
-    </div>
-
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Toggle online/offline status
-        document.getElementById('onlineToggle').addEventListener('change', function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Campus locations for NIT Warangal
+            const campusLocations = [
+                { name: 'Main Gate', lat: 17.9775, lng: 79.5288 },
+                { name: 'Academic Block', lat: 17.9810, lng: 79.5320 },
+                { name: 'Library', lat: 17.9835, lng: 79.5310 },
+                { name: 'Student Hostels', lat: 17.9850, lng: 79.5295 },
+                { name: 'Mess Hall', lat: 17.9840, lng: 79.5305 },
+                { name: 'Sports Complex', lat: 17.9780, lng: 79.5340 },
+                { name: 'Health Center', lat: 17.9820, lng: 79.5285 },
+                { name: 'Auditorium', lat: 17.9825, lng: 79.5330 },
+                { name: 'Workshop', lat: 17.9800, lng: 79.5350 },
+                { name: 'Admin Building', lat: 17.9805, lng: 79.5290 }
+            ];
+
+            // Initialize the map (centered on NIT Warangal)
+            const map = L.map('map').setView([17.9806, 79.5311], 15);
+
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            // Add a marker for current location
+            let marker = L.marker([17.9806, 79.5311]).addTo(map);
+            marker.bindPopup('<b>Driver Location</b><br>NIT Warangal Campus').openPopup();
+
+            // Ensure map renders properly after page load
+            setTimeout(function() {
+                map.invalidateSize();
+            }, 100);
+
+            // State management
+            let isVacant = true;
+            let isOnline = false;
+
+            // DOM elements
+            const availabilityBtn = document.getElementById('availabilityBtn');
+            const statusBtn = document.getElementById('statusBtn');
+            const availabilityDot = document.getElementById('availabilityDot');
+            const statusDot = document.getElementById('statusDot');
+            const availabilityText = document.getElementById('availabilityText');
             const statusText = document.getElementById('statusText');
-            const earningsPanel = document.getElementById('earningsPanel');
-            
-            if (this.checked) {
-                statusText.textContent = 'Online';
-                statusText.classList.remove('text-gray-500');
-                statusText.classList.add('text-green-600');
-                earningsPanel.classList.add('hidden');
-                showToast('You are now online', 'check-circle', 'green');
-            } else {
-                statusText.textContent = 'Offline';
-                statusText.classList.remove('text-green-600');
-                statusText.classList.add('text-gray-500');
-                earningsPanel.classList.remove('hidden');
-                showToast('You are now offline', 'info-circle', 'blue');
+            const destinationBtn = document.getElementById('destinationBtn');
+            const destinationBtnText = document.getElementById('destinationBtnText');
+            const chevronIcon = document.getElementById('chevronIcon');
+            const dropdownContent = document.getElementById('dropdownContent');
+            const dropdownItems = document.getElementById('dropdownItems');
+            const searchInput = document.getElementById('searchInput');
+            const selectedDestination = document.getElementById('selectedDestination');
+
+            // Populate dropdown with locations
+            function populateDropdown(filteredLocations = campusLocations) {
+                dropdownItems.innerHTML = '';
+                filteredLocations.forEach(loc => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    item.textContent = loc.name;
+                    item.addEventListener('click', () => selectLocation(loc));
+                    dropdownItems.appendChild(item);
+                });
             }
-        });
 
-        // Show/hide panels functions
-        function showIncomingRide() {
-            document.getElementById('incomingRideAlert').classList.remove('hidden');
-            // Auto-hide after 30 seconds if not accepted
-            setTimeout(() => {
-                document.getElementById('incomingRideAlert').classList.add('hidden');
-            }, 30000);
-        }
+            // Initialize dropdown
+            populateDropdown();
 
-        function showActiveRide() {
-            document.getElementById('activeRidePanel').classList.remove('hidden');
-            document.getElementById('earningsPanel').classList.add('hidden');
-        }
+            // Toggle dropdown
+            destinationBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = dropdownContent.classList.toggle('show');
+                if (isOpen) {
+                    searchInput.focus();
+                    chevronIcon.style.transform = 'rotate(180deg)';
+                } else {
+                    chevronIcon.style.transform = 'rotate(0deg)';
+                }
+            });
 
-        function showToast(message, icon, color) {
-            const toast = document.getElementById('notificationToast');
-            document.getElementById('toastMessage').textContent = message;
-            document.getElementById('toastIcon').className = `fas fa-${icon} text-${color}-600 text-xl`;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 3000);
-        }
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filtered = campusLocations.filter(loc => 
+                    loc.name.toLowerCase().includes(searchTerm)
+                );
+                populateDropdown(filtered);
+            });
 
-        // Simulate incoming ride request after 5 seconds (for demo)
-        setTimeout(() => {
-            if (document.getElementById('onlineToggle').checked) {
-                showIncomingRide();
+            // Select location
+            function selectLocation(loc) {
+                // Update map
+                map.setView([loc.lat, loc.lng], 17);
+                marker.setLatLng([loc.lat, loc.lng]);
+                marker.bindPopup(`<b>${loc.name}</b><br>NIT Warangal Campus`).openPopup();
+
+                // Close dropdown
+                dropdownContent.classList.remove('show');
+                chevronIcon.style.transform = 'rotate(0deg)';
+                searchInput.value = '';
+                populateDropdown();
+
+                // Update button text
+                destinationBtnText.textContent = loc.name;
+
+                // Show selected location
+                selectedDestination.textContent = loc.name;
+                selectedDestination.classList.add('show');
+
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    selectedDestination.classList.remove('show');
+                }, 3000);
             }
-        }, 5000);
 
-        // Accept ride handler
-        document.getElementById('acceptRideBtn').addEventListener('click', () => {
-            document.getElementById('incomingRideAlert').classList.add('hidden');
-            showActiveRide();
-            showToast('Ride accepted successfully!', 'check-circle', 'green');
-        });
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!destinationBtn.contains(e.target) && !dropdownContent.contains(e.target)) {
+                    dropdownContent.classList.remove('show');
+                    chevronIcon.style.transform = 'rotate(0deg)';
+                }
+            });
 
-        // Decline ride handler
-        document.getElementById('declineRideBtn').addEventListener('click', () => {
-            document.getElementById('incomingRideAlert').classList.add('hidden');
-            showToast('Ride declined', 'times-circle', 'red');
+            // Toggle availability (Vacant/Full)
+            availabilityBtn.addEventListener('click', function() {
+                isVacant = !isVacant;
+                
+                if (isVacant) {
+                    this.innerHTML = `
+                        <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                        Vacant
+                    `;
+                    this.classList.remove('bg-red-600', 'hover:bg-red-500');
+                    this.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                    availabilityDot.classList.remove('bg-red-500');
+                    availabilityDot.classList.add('bg-emerald-500');
+                    availabilityText.textContent = 'Vacant';
+                } else {
+                    this.innerHTML = `
+                        <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                        Full
+                    `;
+                    this.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+                    this.classList.add('bg-red-600', 'hover:bg-red-500');
+                    availabilityDot.classList.remove('bg-emerald-500');
+                    availabilityDot.classList.add('bg-red-500');
+                    availabilityText.textContent = 'Full';
+                }
+            });
+
+            // Toggle status (Offline/Online)
+            statusBtn.addEventListener('click', function() {
+                isOnline = !isOnline;
+                
+                if (isOnline) {
+                    this.innerHTML = `
+                        <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                        </svg>
+                        Online
+                    `;
+                    this.classList.remove('bg-red-600', 'hover:bg-red-500');
+                    this.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                    statusDot.classList.remove('bg-red-500');
+                    statusDot.classList.add('bg-emerald-500');
+                    statusText.textContent = 'Online';
+                } else {
+                    this.innerHTML = `
+                        <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Offline
+                    `;
+                    this.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+                    this.classList.add('bg-red-600', 'hover:bg-red-500');
+                    statusDot.classList.remove('bg-emerald-500');
+                    statusDot.classList.add('bg-red-500');
+                    statusText.textContent = 'Offline';
+                }
+            });
         });
     </script>
-
-  <script src="{{url_for('static',filename='js/script1.js')}}"></script>
 </body>
 </html>

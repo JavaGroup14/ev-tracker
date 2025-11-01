@@ -139,7 +139,15 @@ class Payment_log(db.Model):
     amount = db.Column(db.Numeric(10,2),nullable=False)
 
 # # -------------------- ROUTES --------------------
+def generate_otp():
+    otp_num=secrets.randbelow(900000)+100000
+    return str(otp_num)
 
+def send_otp():
+    sender_email=os.getenv('EMAIL_USER')
+    sender_password=os.getenv('EMAIL_PASSWORD')
+
+    
 @app.route('/')
 def index():
     return render_template("login.html")
