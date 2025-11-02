@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard - EV Tracker</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+
+<body class="bg-[#0b1e3c] text-white font-sans flex flex-col min-h-screen">
+
+  <!-- Header -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#142850] border-b border-[#1f3b73] shadow-md">
+    <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto sm:px-6 lg:px-8">
+      <!-- Left: Brand -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+          <i class="fas fa-car text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-semibold text-white">Campus EV Tracker</h1>
+          <p class="text-xs text-gray-300">Admin Dashboard</p>
+        </div>
+      </div>
+
+      <!-- Right: icons and hamburger (all visible on all sizes) -->
+      <div class="flex items-center gap-2">
+        <!-- Bell -->
+        <button id="notifBtn" class="w-10 h-10 rounded-full bg-[#1e335c] hover:bg-[#27457d] flex items-center justify-center transition">
+          <i class="fas fa-bell text-gray-300"></i>
+        </button>
+
+        <!-- Profile -->
+        <button id="profileBtn" class="w-10 h-10 rounded-full bg-[#1e335c] hover:bg-[#27457d] flex items-center justify-center transition">
+          <i class="fas fa-user-circle text-gray-300"></i>
+        </button>
+
+        <!-- Hamburger moved to right and visible on all screens -->
+        <button id="menuBtn" class="p-2 rounded hover:bg-[#1e335c]">
+          <i class="fas fa-bars text-gray-300 text-xl"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content (extra top padding so header doesn't overlap) -->
+  <main id="mainContent" class="flex-1 overflow-y-auto p-4 pt-28 pb-20 max-w-7xl mx-auto w-full">
+    <h2 class="text-lg font-semibold mb-4">Driver List</h2>
+
+    {% if drivers %}
+    <div id="driverList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {% for driver in drivers %}
+        <div 
+          class="bg-[#1e335c] rounded-2xl p-4 hover:bg-[#27457d] transition shadow-md flex items-center justify-between cursor-pointer"
+          onclick="openDriverLog('{{ driver.name }}')">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+              <i class="fas fa-id-card text-white text-sm"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold text-white">{{ driver.name }}</h3>
+              <p class="text-sm {{ 'text-green-400' if driver.status == 'Active' else 'text-red-400' }}">
+                {{ driver.status }}
+              </p>
+            </div>
+          </div>
+          <div>
+            <i class="fas fa-user-circle text-gray-300 text-3xl"></i>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p class="text-gray-400 text-sm">No drivers found.</p>
+    {% endif %}
+  </main>
+
+  <!-- Floating Add Button -->
+  <button id="addDriverBtn"
+    class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 transition transform active:scale-95 text-white p-4 rounded-full flex items-center justify-center shadow-xl z-40">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white"
+      class="w-6 h-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+  </button>
+
+  <!-- Pre-Register Modal -->
+  <div id="preRegisterModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-[#1e335c] rounded-2xl p-6 w-96 shadow-xl relative">
+      <h2 class="text-lg font-semibold mb-4 text-center">Pre-Register Admin or Driver</h2>
+      <form id="preRegisterForm" method="POST">
+        <input type="email" name="email" placeholder="Enter email"
+          class="w-full p-2 mb-3 rounded bg-[#142850] text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        <select name="role"
+          class="w-full p-2 mb-4 rounded bg-[#142850] text-white border border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+          <option value="">Select Role</option>
+          <option value="admin">Admin</option>
+          <option value="driver">Driver</option>
+        </select>
+
+        <div class="flex justify-end gap-2">
+          <button type="button" id="cancelModalBtn"
+            class="bg-gray-500 hover:bg-gray-600 text-white py-1 px-3 rounded transition">Cancel</button>
+          <button type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded transition">Submit</button>
+        </div>
+      </form>
+      <p id="preRegisterMessage" class="text-center text-sm mt-3 hidden"></p>
+    </div>
+  </div>
+
+  <!-- Sidebar Menu (covers left side when opened) -->
+  <div id="sidebarMenu" class="fixed inset-y-0 left-0 w-64 bg-[#142850] shadow-lg transform -translate-x-full transition-transform duration-300 z-50">
+    <div class="p-4 border-b border-[#1f3b73] flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-white">Menu</h2>
+      <button id="closeMenu" class="text-gray-300 hover:text-white">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+
+    <ul class="p-4 space-y-3">
+      <li><a href="/Admin" class="block py-2 px-3 rounded hover:bg-[#1e335c]">Driver's List</a></li>
+      <li><a href="/Admin/payments" class="block py-2 px-3 rounded hover:bg-[#1e335c]">Payment Logs</a></li>
+      <li><a href="/Admin/feedbacks" class="block py-2 px-3 rounded hover:bg-[#1e335c]">Feedbacks</a></li>
+    </ul>
+  </div>
+
+  <!-- Overlay to dim background when sidebar open (initially hidden) -->
+  <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black bg-opacity-40 z-40"></div>
+
+  <!-- Scripts -->
+  <script>
+    // Elements
+    const addBtn = document.getElementById('addDriverBtn');
+    const modal = document.getElementById('preRegisterModal');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const form = document.getElementById('preRegisterForm');
+    const message = document.getElementById('preRegisterMessage');
+
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebarMenu = document.getElementById('sidebarMenu');
+    const closeMenu = document.getElementById('closeMenu');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    // Hide Floating Button When Scrolling
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.scrollY;
+      if (currentScroll > lastScroll) {
+        addBtn.classList.add('translate-y-20', 'opacity-0');
+      } else {
+        addBtn.classList.remove('translate-y-20', 'opacity-0');
+      }
+      lastScroll = currentScroll;
+    });
+
+    // Open Modal
+    addBtn.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      message.classList.add('hidden');
+      form.reset();
+    });
+
+    // Close Modal
+    cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+
+    // Submit Form via Fetch (AJAX)
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("/pre_register", {
+          method: "POST",
+          body: formData
+        });
+        const result = await response.json();
+
+        message.classList.remove('hidden');
+        if (result.success) {
+          message.textContent = "✅ Successfully pre-registered!";
+          message.classList.remove('text-red-400');
+          message.classList.add('text-green-400');
+          setTimeout(() => modal.classList.add('hidden'), 1000);
+        } else {
+          message.textContent = "⚠️ " + (result.error || "Error while registering");
+          message.classList.remove('text-green-400');
+          message.classList.add('text-red-400');
+        }
+      } catch (error) {
+        message.classList.remove('hidden');
+        message.textContent = "⚠️ Something went wrong!";
+        message.classList.add('text-red-400');
+      }
+    });
+
+    // Open Driver Log
+    function openDriverLog(username) {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+      window.location.href = `/Driver_log/${username}/${year}/${month}/${day}`;
+    }
+
+    // Sidebar open/close helpers
+    function openSidebar() {
+      sidebarMenu.classList.remove('-translate-x-full');
+      sidebarOverlay.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+    function closeSidebar() {
+      sidebarMenu.classList.add('-translate-x-full');
+      sidebarOverlay.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    menuBtn.addEventListener('click', openSidebar);
+    closeMenu.addEventListener('click', closeSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar on ESC
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !sidebarMenu.classList.contains('-translate-x-full')) {
+        closeSidebar();
+      }
+    });
+  </script>
+</body>
+</html>

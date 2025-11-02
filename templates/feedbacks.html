@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feedbacks - Admin Dashboard</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-[#0b1e3c] text-white font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#142850] border-b border-[#1f3b73] shadow-md">
+    <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto sm:px-6 lg:px-8">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+          <i class="fas fa-car text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-semibold text-white">Campus EV Tracker</h1>
+          <p class="text-xs text-gray-300">Admin Feedbacks</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button class="w-10 h-10 rounded-full bg-[#1e335c] hover:bg-[#27457d] flex items-center justify-center transition">
+          <i class="fas fa-bell text-gray-300"></i>
+        </button>
+        <button class="w-10 h-10 rounded-full bg-[#1e335c] hover:bg-[#27457d] flex items-center justify-center transition">
+          <i class="fas fa-user-circle text-gray-300"></i>
+        </button>
+
+        <!-- Hamburger -->
+        <button id="menuBtn" class="sm:hidden p-2 rounded hover:bg-[#1e335c]">
+          <i class="fas fa-bars text-gray-300 text-xl"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10 w-full">
+    <h2 class="text-xl font-semibold mb-6">User Feedbacks</h2>
+
+    {% if feedbacks %}
+    <div class="space-y-4">
+      {% for fb in feedbacks %}
+      <div class="bg-[#1e335c] rounded-2xl p-4 shadow-md hover:bg-[#27457d] transition">
+        <div class="flex items-start space-x-3">
+          <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="avatar" class="w-10 h-10 rounded-full">
+          <div class="flex-1">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-white">{{ fb.username }} <span class="text-sm text-gray-400">({{ fb.role }})</span></h3>
+              <p class="text-sm text-gray-400">{{ fb.date }}</p>
+            </div>
+            <p class="text-gray-300 mt-2 leading-relaxed">{{ fb.feedback }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-400 text-sm">No feedbacks yet.</p>
+    {% endif %}
+  </main>
+
+  <!-- Sidebar Menu -->
+  <div id="sidebarMenu" class="fixed inset-y-0 left-0 w-64 bg-[#142850] shadow-lg transform -translate-x-full transition-transform duration-300 z-50">
+    <div class="p-4 border-b border-[#1f3b73] flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-white">Menu</h2>
+      <button id="closeMenu" class="text-gray-300 hover:text-white">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+
+    <ul class="p-4 space-y-3">
+      <li><a href="/Admin" class="block py-2 px-3 rounded hover:bg-[#1e335c]">Driver's List</a></li>
+      <li><a href="/Admin/payments" class="block py-2 px-3 rounded hover:bg-[#1e335c]">Payment Logs</a></li>
+      <li><a href="/Admin/feedbacks" class="block py-2 px-3 rounded bg-[#1e335c] font-semibold">Feedbacks</a></li>
+    </ul>
+  </div>
+
+  <!-- JS -->
+  <script>
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebarMenu = document.getElementById('sidebarMenu');
+    const closeMenu = document.getElementById('closeMenu');
+
+    menuBtn.addEventListener('click', () => sidebarMenu.classList.remove('-translate-x-full'));
+    closeMenu.addEventListener('click', () => sidebarMenu.classList.add('-translate-x-full'));
+    window.addEventListener('click', (e) => {
+      if (!sidebarMenu.contains(e.target) && !menuBtn.contains(e.target)) {
+        sidebarMenu.classList.add('-translate-x-full');
+      }
+    });
+  </script>
+
+</body>
+</html>

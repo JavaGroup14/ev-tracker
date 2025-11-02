@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ username }} Logs - Admin View</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0a0f1a] min-h-screen flex flex-col items-center py-10 text-gray-200">
+
+  <div class="bg-[#121826]/80 backdrop-blur-lg shadow-xl rounded-2xl w-11/12 md:w-3/4 lg:w-2/3 p-6 border border-[#1f2a40]">
+    <!-- Header -->
+    <h1 class="text-2xl font-semibold text-center text-white">
+      {{ username }}'s Work Log
+    </h1>
+    <hr class="my-4 border-gray-700">
+
+    <!-- Summary -->
+    <div class="text-center mb-4 space-y-1">
+      <p class="text-lg font-medium text-gray-100">
+        Log: {{ month_name }} {{ year }}
+      </p>
+      <p class="text-gray-400">
+        Total Working Days: {{ total_days }}/{{ month_days }}
+      </p>
+      <p class="text-gray-400">
+        Total Working Hours: {{ total_hours }} hrs
+      </p>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto max-h-96 border border-[#1f2a40] rounded-lg shadow-sm">
+      <table class="min-w-full text-left text-sm">
+        <thead class="bg-[#1b2435] sticky top-0">
+          <tr>
+            <th class="px-4 py-2 font-semibold text-gray-300">Date</th>
+            <th class="px-4 py-2 font-semibold text-gray-300">Hours Worked</th>
+          </tr>
+        </thead>
+        <tbody class="bg-[#121826] divide-y divide-[#1f2a40]">
+          {% for log in logs %}
+          <tr class="hover:bg-[#1e293b]/60 transition">
+            <td class="px-4 py-2">{{ log.date.strftime('%d-%b-%Y') }}</td>
+            <td class="px-4 py-2">{{ log.hours_worked }}</td>
+          </tr>
+          {% endfor %}
+          {% if not logs %}
+          <tr>
+            <td colspan="2" class="text-center py-4 text-gray-500">No logs available for this month.</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="flex justify-between items-center mt-6">
+      <button 
+        onclick="navigate('{{ prev_year }}', '{{ prev_month }}')" 
+        class="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+        {% if prev_disabled %}disabled{% endif %}>
+        ← Previous
+      </button>
+
+      <button 
+        onclick="navigate('{{ next_year }}', '{{ next_month }}')" 
+        class="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+        {% if next_disabled %}disabled{% endif %}>
+        Next →
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function navigate(year, month) {
+      const today = new Date();
+      const day = today.getDate();
+      const pathParts = window.location.pathname.split('/');
+      const username = pathParts[pathParts.length - 4]; 
+      window.location.href = `/Driver_log/${username}/${year}/${month}/${day}`;
+    }
+  </script>
+
+</body>
+</html>

@@ -409,38 +409,45 @@ function validateEmail(value) {
     input.addEventListener('input', () => clearError(input));
   });
 
-  if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+ if (loginForm) {
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      const inputs = [
-        $('#loginEmail'),
-        $('#loginPassword')
-      ].filter(Boolean);
+    const username = $('#loginUsername')?.value?.trim();
+    const password = $('#loginPassword')?.value?.trim();
+    if (!username || !password) return;
 
-      let valid = true;
-      inputs.forEach((input) => {
-        if (!validateLoginField(input)) valid = false;
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    const prevText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10"/></svg> Signing in...';
+
+    try {
+      const response = await fetch('/login_button', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ username, password }),
       });
-      if (!valid) return;
 
-      const submitBtn = loginForm.querySelector('button[type="submit"]');
-      const prevText = submitBtn.innerHTML;
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10"/></svg> Signing in...';
-
-      try {
-        await new Promise((res) => setTimeout(res, 500));
+      if (response.redirected) {
         loginSuccessEl?.classList.remove('hidden');
-        // Smooth transition then navigate (adjust target as needed after wiring backend)
-        startTransition(window.innerWidth/2, window.innerHeight/2);
-        setTimeout(() => { window.location.href = '/Student'; }, 220);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = prevText;
+        startTransition(window.innerWidth / 2, window.innerHeight / 2);
+        setTimeout(() => {
+          window.location.href = response.url; // auto-follows Flask redirect
+        }, 250);
+      } else {
+        const text = await response.text();
+        alert(text); // You can replace this with a styled toast
       }
-    });
-  }
+    } catch (err) {
+      console.error(err);
+      alert('Something went wrong. Try again.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = prevText;
+    }
+  });
+}
+
 })();
