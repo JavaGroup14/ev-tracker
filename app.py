@@ -152,15 +152,6 @@ class Feedback(db.Model):
  
 
 # # -------------------- ROUTES --------------------
-def generate_otp():
-    otp_num= secrets.randbelow(900000)+100000
-    return str(otp_num)
-
-def send_otp():
-    sender_email=os.getenv('EMAIL_USER')
-    sender_password=os.getenv('EMAIL_PASSWORD')
-
-    
 @app.route('/')
 def index():
     return render_template("login.html")
@@ -182,6 +173,7 @@ def login():
     # Set session
     session['username'] = user.username
     session['role'] = user.role
+    session['dateofjoin'] = user.reg_date
 
     # Redirect by role (this triggers JS `response.redirected`)
     if user.role == 'student':
@@ -216,6 +208,10 @@ def authorize_google():
     user = Users.query.filter_by(email=google_email).first()
     if user:
         # Already registered → redirect based on role
+            #added for sessions
+        session['username'] = user.username
+        session['role'] = user.role
+        session['dateofjoin'] = user.reg_date
         if user.role == 'student':
             return redirect('/Student')
         elif user.role == 'driver':
@@ -255,6 +251,11 @@ def registration2():
         )
         db.session.add(new_user)
         db.session.commit()
+        
+        #added for sessions
+        session['username'] = new_user.username
+        session['role'] = new_user.role
+        session['dataofjoin']=new_user.reg_date
 
         # 4. Redirect based on role
         if selected_role == 'student':
@@ -266,6 +267,21 @@ def registration2():
 
     # GET request → show registration form
     return render_template("registration2.html")
+
+@app.route('/Role')
+def roles():
+    if 'username' not in session:
+        return redirect(url_for('index'))
+    
+    cur_username=session.get('username')
+    cur_role=session.get('role')
+    user=Users.query.filter_by(username=cur_username).first()
+    if not user:
+        # If user not found, clear the bad session and send to login
+        session.clear()
+        return redirect(url_for('index'))
+    
+    return render_template('role.html',username=cur_username,role=cur_role,email=user.email,dateofjoin=user.reg_date)
 
 @app.route('/Student')
 def student_ui():

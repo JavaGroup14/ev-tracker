@@ -35,22 +35,19 @@
 
       <!-- Right: icons and hamburger (all visible on all sizes) -->
       <div class="flex items-center gap-2">
-        <!-- Bell -->
-        <button id="notifBtn" class="w-10 h-10 rounded-full bg-[#1e335c] hover:bg-[#27457d] flex items-center justify-center transition">
-          <i class="fas fa-bell text-gray-300"></i>
-        </button>
+          <a id="notifBtn" href="#" class="w-10 h-10 rounded-full bg-[#1e335c] hover:bg-[#27457d] flex items-center justify-center transition">
+              <i class="fas fa-bell text-gray-300"></i>
+          </a>
 
-        <!-- Profile -->
-        <button id="profileBtn" class="w-10 h-10 rounded-full bg-[#1e335c] hover:bg-[#27457d] flex items-center justify-center transition">
-          <i class="fas fa-user-circle text-gray-300"></i>
-        </button>
+          <a id="profileBtn" href="{{url_for('roles')}}" class="w-10 h-10 rounded-full bg-[#1e335c] hover:bg-[#27457d] flex items-center justify-center transition">
+              <i class="fas fa-user-circle text-gray-300"></i>
+          </a>
 
-        <!-- Hamburger moved to right and visible on all screens -->
-        <button id="menuBtn" class="p-2 rounded hover:bg-[#1e335c]">
-          <i class="fas fa-bars text-gray-300 text-xl"></i>
-        </button>
+          <a id="menuBtn" href="#" class="p-2 rounded hover:bg-[#1e335c]">
+              <i class="fas fa-bars text-gray-300 text-xl"></i>
+          </a>
       </div>
-    </div>
+      </div>
   </nav>
 
   <!-- Main Content (extra top padding so header doesn't overlap) -->

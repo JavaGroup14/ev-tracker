@@ -1,11 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EV Tracker | Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{url_for('static', filename='css/styles.css')}}" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+        colors: {
+          primary: {
+            50: '#eef8ff', 100: '#d9efff', 200: '#bce4ff', 300: '#8fd3ff',
+            400: '#5bbdff', 500: '#2aa6ff', 600: '#0f86e6', 700: '#0c67b4',
+            800: '#0d5491', 900: '#0f4677'
+          },
+          accent: {
+            500: '#22c55e'
+          }
+        },
+        boxShadow: {
+          glow: '0 10px 30px rgba(16, 185, 129, 0.15)'
+        }
+      }
+    }
+  }
+</script>
+<meta name="description" content="Your profile - EV Tracker" />
 </head>
-<body>
-    
+<body class="min-h-screen font-sans text-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+  <div class="relative">
+    <!-- Subtle grid background -->
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0">
+      <div class="h-full w-full opacity-20" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0); background-size: 24px 24px;"></div>
+    </div>
+
+    <header class="relative z-10">
+      <nav class="mx-auto max-w-7xl px-6 py-6 flex items-center justify-between">
+        <a href="#" class="flex items-center gap-3 group">
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-emerald-500 p-[2px]">
+            <div class="h-full w-full rounded-[10px] bg-slate-950 grid place-items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-primary-300 group-hover:text-primary-200 transition-colors"><path d="M7 6h7a5 5 0 0 1 5 5v7a1 1 0 0 1-1 1h-7a5 5 0 0 1-5-5V7a1 1 0 0 1 1-1Zm2 3h5a3 3 0 0 1 3 3v5h-5a3 3 0 0 1-3-3V9Z"/><path d="M7 6V5a3 3 0 0 1 3-3h7v2h-7a1 1 0 0 0-1 1v1H7Z"/></svg>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-slate-400">NIT Warangal</p>
+            <p class="text-base font-semibold text-white">EV Tracker</p>
+          </div>
+        </a>
+        <div class="flex items-center gap-4">
+          <a href="" class="text-sm text-slate-300 hover:text-white transition-colors">Dashboard</a>
+          <button class="text-sm text-slate-300 hover:text-white transition-colors" onclick="alert('Sign out functionality will be implemented here')">Sign out</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="relative z-10 py-8 lg:py-14">
+      <section class="mx-auto max-w-3xl px-6">
+        <div class="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-8 sm:p-12 shadow-glow">
+          
+          <!-- Profile Picture Container -->
+          <div class="flex flex-col items-center mb-8">
+            <div class="relative">
+              <!-- Image Circle -->
+              <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden ring-4 ring-primary-500/30 bg-gradient-to-br from-primary-500/20 to-emerald-500/20 flex items-center justify-center">
+                <img id="profileImage" src="https://ui-avatars.com/api/?name=John+Doe&size=160&background=2aa6ff&color=fff" 
+                     alt="Profile Picture" 
+                     class="w-full h-full object-cover"
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iIzJhYTZmZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiBkeT0iLjNlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+SlA8L3RleHQ+PC9zdmc+'">
+              </div>
+              
+              <!-- Badge overlay for role -->
+              <div id="roleBadge" class="absolute -bottom-2 -right-2 bg-gradient-to-br from-primary-600 to-emerald-600 rounded-full p-3 shadow-lg ring-4 ring-slate-950">
+                <svg id="roleIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-white">
+                  <!-- Default graduation cap icon -->
+                  <path d="M12 3L2 8.25l10 5 8.5-4.17V13h1.5V8.25L12 3Z"/>
+                  <path d="M6.5 12.5v2.25c0 1.07 2.9 2.75 5.5 2.75s5.5-1.68 5.5-2.75V12.5L12 15l-5.5-2.5Z"/>
+                </svg>
+              </div>
+              
+              <!-- Edit Profile Button -->
+              <button id="editProfileBtn" class="absolute top-2 right-2 w-10 h-10 rounded-full bg-slate-900/80 backdrop-blur border border-white/20 hover:bg-slate-800 transition-all flex items-center justify-center group">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-slate-300 group-hover:text-white">
+                  <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
+                  <path d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z" />
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Username -->
+            <h1 id="username" class="text-2xl sm:text-3xl font-bold text-white mt-6">{{username}}</h1>
+            
+            <!-- Role Badge Text -->
+            <div id="roleText" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-500/20 border border-primary-500/30 mt-3">
+              <span class="text-xs uppercase tracking-wider font-semibold text-primary-300">{{role}}</span>
+            </div>
+          </div>
+
+          <!-- Profile Details -->
+          <div class="space-y-4">
+            <!-- Email -->
+            <div class="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-primary-400">
+                    <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a1.5 1.5 0 0 1-1.144 0L1.5 8.67Z" />
+                    <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Email</p>
+                  <p id="email" class="text-sm font-medium text-white truncate">john.doe@nitw.ac.in</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Role Details -->
+            <div class="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-emerald-400">
+                    <path fill-rule="evenodd" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Account Type</p>
+                  <p id="accountType" class="text-sm font-medium text-white">{{role}}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Member Since -->
+            <div class="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-400">
+                    <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+                    <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Member Since</p>
+                  <p id="memberSince" class="text-sm font-medium text-white">January 2024</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/10">
+              <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 text-slate-200 font-medium transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                  <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
+                  <path d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z" />
+                </svg>
+                Edit Profile
+              </button>
+              <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 text-slate-200 font-medium transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                  <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clip-rule="evenodd" />
+                </svg>
+                Security
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="relative z-10 py-8">
+      <div class="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <p>© <span id="year"></span> EV Tracker, NIT Warangal</p>
+        <div class="flex items-center gap-4">
+          <a href="#" class="hover:text-slate-200">Privacy</a>
+          <a href="#" class="hover:text-slate-200">Terms</a>
+          <a href="#" class="hover:text-slate-200">Support</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Set current year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Sample data - replace with actual user data from your backend
+    const userData = {
+      username: {{ username | tojson }},
+      email: {{ email | tojson }},
+      role: {{ role | tojson }},
+      memberSince: {{ dateofjoin | tojson }}
+    };
+
+    // Update role icon based on role
+    function updateRoleIcon(role) {
+      const roleIcon = document.getElementById('roleIcon');
+      const roleText = document.getElementById('roleText');
+      const accountType = document.getElementById('accountType');
+      
+      let iconPath = '';
+      let roleName = '';
+      let accountTypeName = '';
+      
+      switch(role.toLowerCase()) {
+        case 'student':
+          iconPath = `
+            <path d="M12 3L2 8.25l10 5 8.5-4.17V13h1.5V8.25L12 3Z"/>
+            <path d="M6.5 12.5v2.25c0 1.07 2.9 2.75 5.5 2.75s5.5-1.68 5.5-2.75V12.5L12 15l-5.5-2.5Z"/>
+          `;
+          roleName = 'Student';
+          accountTypeName = 'Student Account';
+          break;
+        case 'driver':
+          iconPath = `
+            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+          `;
+          roleName = 'Driver';
+          accountTypeName = 'Driver Account';
+          break;
+        case 'admin':
+          iconPath = `
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          `;
+          roleName = 'Admin';
+          accountTypeName = 'Admin Account';
+          break;
+        default:
+          iconPath = `
+            <path d="M12 3L2 8.25l10 5 8.5-4.17V13h1.5V8.25L12 3Z"/>
+            <path d="M6.5 12.5v2.25c0 1.07 2.9 2.75 5.5 2.75s5.5-1.68 5.5-2.75V12.5L12 15l-5.5-2.5Z"/>
+          `;
+          roleName = 'User';
+          accountTypeName = 'User Account';
+      }
+      
+      roleIcon.innerHTML = iconPath;
+      roleText.querySelector('span').textContent = roleName;
+      accountType.textContent = accountTypeName;
+    }
+
+    // Initialize with user data
+    document.getElementById('username').textContent = userData.username;
+    document.getElementById('email').textContent = userData.email;
+    document.getElementById('memberSince').textContent = userData.memberSince;
+    document.getElementById('profileImage').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.username)}&size=160&background=2aa6ff&color=fff`;
+    updateRoleIcon(userData.role);
+
+    // Edit profile button functionality
+    document.getElementById('editProfileBtn').addEventListener('click', () => {
+      alert('Edit profile functionality will be implemented here');
+      // Add your edit profile logic here
+    });
+  </script>
 </body>
 </html>
+
