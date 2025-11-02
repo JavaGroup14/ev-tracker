@@ -350,7 +350,6 @@ def driver_log(username, year, month, day):
         next_disabled=next_disabled
     )
 
-
 @app.route('/pre_register', methods=['POST'])
 def pre_register():
     email = request.form.get('email')
