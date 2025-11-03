@@ -225,7 +225,6 @@ def login_google():
 @csrf.exempt
 @app.route('/registration')
 def reg():
-    
     return render_template("registration.html")
 
 # Callback route Google redirects to
@@ -301,6 +300,7 @@ def registration2():
     # GET request → show registration form
     return render_template("registration2.html")
 
+@csrf.exempt
 def get_gmail_service():
     """
     Loads credentials and builds the Gmail service object.
@@ -395,6 +395,7 @@ def send_otp_email(service, recipient_email, otp_code):
         print(f"An unexpected error occurred: {e}")
         return False
 
+@csrf.exempt
 @app.route('/send-otp', methods=['POST'])
 def send_otp():
     form_username = request.form['username']
@@ -440,6 +441,7 @@ def send_otp():
         return jsonify({"success": False, "error": "Failed to send OTP"}), 500
 
 # --- NEW ROUTE: To verify OTP and create account ---
+@csrf.exempt
 @app.route('/verify-and-create', methods=['POST'])
 def verify_and_create():
     user_otp = request.form.get('otp')
@@ -508,6 +510,7 @@ def roles():
     
     return render_template('role.html',username=cur_username,role=cur_role,email=user.email,dateofjoin=user.reg_date)
 
+@csrf.exempt
 @app.route('/Student')
 def student_ui():
     return render_template("student.html")
@@ -727,7 +730,6 @@ def get_csrf_token():
     return jsonify({'csrf_token': token})
 
 # ---- PAYMENT INTEGRATION ----
-@csrf.exempt
 @app.route('/create_order', methods=['POST'])
 def create_order():
     amount = int(os.getenv('DEFAULT_AMOUNT')) * 100  # ₹10 in paise
@@ -740,7 +742,6 @@ def create_order():
     })
     return jsonify({'order_id': order['id'], 'razorpay_key': os.getenv('RAZORPAY_KEY_ID')})
 
-@csrf.exempt
 @app.route('/verify_payment', methods=['POST'])
 def verify_payment():
     data = request.get_json()

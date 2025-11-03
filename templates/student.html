@@ -317,10 +317,24 @@
                 cancelRideBtn.disabled = true;
             }
 
-           async function payNow() {
+            async function payNow() {
                 try {
-                    const orderRes = await fetch('/create_order', { method: 'POST' });
-                    const orderData = await orderRes.json();
+                    // Get CSRF token (important for Flask)
+                    const csrfResponse = await fetch('/get_csrf_token');
+                    const { csrf_token } = await csrfResponse.json();
+
+                    // Step 2: Create order on backend
+                    const orderResponse = await fetch('/create_order', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrf_token
+                        }
+                    });
+
+                    if (!orderResponse.ok) throw new Error("Failed to create order");
+
+                    const orderData = await orderResponse.json();
 
                     if (!orderData.order_id) {
                         alert("Error creating payment order");
@@ -338,7 +352,10 @@
                             // Verify payment on backend
                             const verifyRes = await fetch('/verify_payment', {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrf_token
+                                 },
                                 body: JSON.stringify(response)
                             });
                             const verifyData = await verifyRes.json();
@@ -354,7 +371,6 @@
                             "color": "#0ea5e9"
                         }
                     };
-
                     const rzp = new Razorpay(options);
                     rzp.open();
                 } catch (err) {
@@ -362,7 +378,6 @@
                     alert("Payment initiation failed");
                 }
             }
-
 
             // Set initial state on load (now it's called from inside)
             resetToInitialState();
