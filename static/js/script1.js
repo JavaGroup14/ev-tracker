@@ -287,29 +287,39 @@ function validateEmail(value) {
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10"/></svg> Sending OTP...';
 
+// --- MODIFIED SECTION: Replaced setTimeout with fetch ---
       try {
-        await new Promise((res) => setTimeout(res, 900));
-        
-        // Store form data for later use
-        storedFormData = {
-          username: $('#username').value,
-          email: $('#email').value,
-          password: $('#password').value,
-          role: $('#role').value
-        };
+        const formData = new FormData(form);
+        const response = await fetch('/send-otp', {
+            method: 'POST',
+            body: formData
+        });
 
-        // Show OTP form
+        if (!response.ok) {
+            const data = await response.json();
+            // Show server-side validation error
+            // This is a simple alert, you can make it sophisticated
+            alert(data.error || 'An error occurred.');
+            return; // Stop execution
+        }
+        
+        // --- Store form data for "resend" button ---
+        storedFormData = Object.fromEntries(formData.entries());
+
+        // Show OTP form on success
         form.classList.add('hidden');
         otpForm.classList.remove('hidden');
         otpEmailDisplay.textContent = storedFormData.email;
         otpInput.focus();
+
       } catch (err) {
-        // In real integration, handle API errors here
         console.error(err);
+        alert('A network error occurred. Please try again.');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = prevText;
       }
+      // --- END MODIFIED SECTION ---
     });
   }
 
@@ -325,25 +335,40 @@ function validateEmail(value) {
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M22 12a10 10 0 0 1-10 10"/></svg> Creating account...';
 
+     // --- MODIFIED SECTION: Replaced setTimeout with fetch ---
       try {
-        await new Promise((res) => setTimeout(res, 900));
-        successEl?.classList.remove('hidden');
-        form.reset();
-        updatePasswordStrength();
-        otpForm.reset();
-        
-        // Reset after showing success message
-        setTimeout(() => {
-          otpForm.classList.add('hidden');
-          form.classList.remove('hidden');
-          storedFormData = null;
-        }, 3000);
+        const formData = new FormData(otpForm);
+        const response = await fetch('/verify-and-create', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Success! Show message and redirect
+            successEl?.classList.remove('hidden');
+            form.reset();
+            otpForm.reset();
+            
+            // Redirect to the user's dashboard
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 1500); // Wait 1.5s to show success msg
+
+        } else {
+            // Failed, show error on the OTP input
+            setError(otpInput, data.error || 'Verification failed.');
+        }
+
       } catch (err) {
         console.error(err);
+        setError(otpInput, 'A network error occurred.');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = prevText;
       }
+      // --- END MODIFIED SECTION ---
     });
   }
 

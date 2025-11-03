@@ -3,10 +3,25 @@ from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 import os, urllib
-import smtplib,ssl,random,time
 from email.message import EmailMessage
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date,timezone
 from sqlalchemy import text
+import base64
+import secrets
+import json
+from email.message import EmailMessage
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
+
+# --- Configuration ---
+# This is the email you authorized in Part 1
+# All emails will be sent FROM this address.
+SENDER_EMAIL = "evtracker3@gmail.com"
+SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 from urllib.parse import quote_plus
 from flask_wtf import CSRFProtect
 from flask_wtf.csrf import generate_csrf
@@ -210,6 +225,7 @@ def login_google():
 @csrf.exempt
 @app.route('/registration')
 def reg():
+    
     return render_template("registration.html")
 
 # Callback route Google redirects to
@@ -284,6 +300,197 @@ def registration2():
 
     # GET request → show registration form
     return render_template("registration2.html")
+
+def get_gmail_service():
+    """
+    Loads credentials and builds the Gmail service object.
+    This is the "Production" way to do it.
+    """
+    
+    # 1. Load the token data from the environment variable
+    token_json_str = os.getenv('GMAIL_TOKEN_JSON')
+    if not token_json_str:
+        print("ERROR: GMAIL_TOKEN_JSON environment variable not set.")
+        return None
+        
+    try:
+        # 2. Recreate the Credentials object from the JSON string
+        creds_data = json.loads(token_json_str)
+        creds = Credentials.from_authorized_user_info(creds_data, SCOPES)
+    except json.JSONDecodeError:
+        print(f"ERROR: Could not parse GMAIL_TOKEN_JSON.")
+        return None
+    except Exception as e:
+        print(f"ERROR: Failed to load credentials: {e}")
+        return None
+
+    # 3. If the token is expired, refresh it
+    if not creds.valid:
+        if creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                print("Credentials refreshed.")
+                
+                # IMPORTANT: You should update the stored env variable
+                # with the new creds.to_json() content if it refreshes.
+                # For simplicity, we skip that here, but it's
+                # best practice for long-running apps.
+                
+            except Exception as e:
+                print(f"ERROR: Could not refresh token: {e}")
+                return None
+        else:
+            print("ERROR: Credentials are not valid and cannot be refreshed.")
+            print("You may need to re-run the local script to get a new token.json.")
+            return None
+
+    # 4. Build the Gmail service
+    try:
+        service = build("gmail", "v1", credentials=creds)
+        print("Gmail service created successfully.")
+        return service
+    except HttpError as error:
+        print(f"An error occurred building the service: {error}")
+        return None
+
+def generate_otp():
+    """Generates a secure 6-digit OTP."""
+    otp_num = secrets.randbelow(900000) + 100000
+    return str(otp_num)
+
+def send_otp_email(service, recipient_email, otp_code):
+    """
+    Creates and sends the email message to any recipient.
+    
+    Args:
+        service: The authorized Gmail service object.
+        recipient_email: The user's email address (string).
+        otp_code: The 6-digit OTP (string).
+        
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        message = EmailMessage()
+        message.set_content(f"Your one-time password is: {otp_code}")
+        message["To"] = recipient_email  # <-- THIS IS NOW DYNAMIC
+        message["From"] = SENDER_EMAIL
+        message["Subject"] = "Your OTP Code"
+
+        encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        create_message = {"raw": encoded_message}
+
+        send_message = (
+            service.users()
+            .messages()
+            .send(userId="me", body=create_message)
+            .execute()
+        )
+        print(f'Message sent to {recipient_email}. Message Id: {send_message["id"]}')
+        return True
+    except HttpError as error:
+        print(f"An error occurred sending email: {error}")
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return False
+
+@app.route('/send-otp', methods=['POST'])
+def send_otp():
+    form_username = request.form['username']
+    form_email = request.form['email']
+    form_password = request.form['password']
+    selected_role = request.form['role']
+    
+    # 1. Check username uniqueness
+    if Users.query.filter_by(username=form_username).first():
+        return jsonify({"success": False, "error": "Username already taken"}), 400
+        
+    # 2. Check email uniqueness
+    if Users.query.filter_by(email=form_email).first():
+        return jsonify({"success": False, "error": "Email already registered"}), 400
+
+    # 3. PreRegistered check (same as your /registration2)
+    if selected_role in ['driver', 'admin']:
+        pre = PreRegistered.query.filter_by(email=form_email, role=selected_role).first()
+        if not pre:
+            return jsonify({"success": False, "error": "Email not authorized for this role"}), 403
+
+    # 4. All checks passed, get service and generate OTP
+    service = get_gmail_service()
+    if not service:
+        return jsonify({"success": False, "error": "Email service is down"}), 500
+        
+    otp_code = generate_otp()
+    
+    # 5. Store data in session for verification
+    session['otp_code'] = otp_code
+    session['otp_timestamp'] = datetime.now(timezone.utc)
+    session['registration_data'] = {
+        "username": form_username,
+        "email": form_email,
+        "password": form_password, # Note: Storing password in session is okay but clear it ASAP
+        "role": selected_role
+    }
+    
+    # 6. Send the email
+    if send_otp_email(service, form_email, otp_code):
+        return jsonify({"success": True, "message": "OTP sent!"})
+    else:
+        return jsonify({"success": False, "error": "Failed to send OTP"}), 500
+
+# --- NEW ROUTE: To verify OTP and create account ---
+@app.route('/verify-and-create', methods=['POST'])
+def verify_and_create():
+    user_otp = request.form.get('otp')
+    
+    # 1. Get data from session
+    otp_code = session.get('otp_code')
+    otp_timestamp = session.get('otp_timestamp')
+    reg_data = session.get('registration_data')
+    
+    if not all([user_otp, otp_code, otp_timestamp, reg_data]):
+        return jsonify({"success": False, "error": "Session expired. Please start over."}), 400
+
+    # 2. Check OTP
+    if user_otp != otp_code:
+        return jsonify({"success": False, "error": "Invalid OTP"}), 400
+        
+    # 3. Check expiration (e.g., 5 minutes)
+    if datetime.now(timezone.utc) - otp_timestamp > timedelta(minutes=5):
+        return jsonify({"success": False, "error": "OTP expired"}), 400
+        
+    # 4. All checks passed, create user
+    try:
+        new_user = Users(
+            username=reg_data['username'],
+            email=reg_data['email'],
+            password=reg_data['password'], # Note: You should hash this password!
+            role=reg_data['role'],
+            reg_date=datetime.now()
+        )
+        db.session.add(new_user)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"DB Error: {e}")
+        # Check if it's a unique constraint error (race condition)
+        if "UNIQUE constraint" in str(e):
+             return jsonify({"success": False, "error": "Username or email was just taken."}), 409
+        return jsonify({"success": False, "error": "Database error"}), 500
+
+    # 5. Clear session data and log user in
+    session.pop('otp_code', None)
+    session.pop('otp_timestamp', None)
+    session.pop('registration_data', None)
+    
+    session['username'] = new_user.username
+    session['role'] = new_user.role
+    session['dateofjoin'] = new_user.reg_date
+
+    # 6. Send redirect URL based on role
+    redirect_url = url_for(f"{new_user.role}_ui")
+    return jsonify({"success": True, "redirect_url": redirect_url})
 
 @csrf.exempt
 @app.route('/Role')
