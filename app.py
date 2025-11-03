@@ -7,6 +7,11 @@ import smtplib,ssl,random,time
 from email.message import EmailMessage
 from datetime import datetime, timedelta, date
 from sqlalchemy import text
+from urllib.parse import quote_plus
+from flask_wtf import CSRFProtect
+from flask_wtf.csrf import generate_csrf
+import razorpay
+from flask import jsonify
 
 load_dotenv()
 
@@ -65,6 +70,12 @@ So SQLAlchemy needs one Python class per table to know:
     What relationships (foreign keys) connect them
 """
 
+# Razor pay
+razorpay_client = razorpay.Client(
+    auth=(os.getenv("RAZORPAY_KEY_ID"), os.getenv("RAZORPAY_SECRET"))
+)
+
+csrf = CSRFProtect(app)
 oauth = OAuth(app)
 
 # It’s a fixed public URL provided by Google that contains all OAuth-related URLs (like authorization, token, and userinfo endpoints).
@@ -109,7 +120,7 @@ class Student(db.Model):
     username = db.Column(db.String(20),nullable=False)
     latitude = db.Column(db.Numeric(9,6),nullable=False)
     longitude = db.Column(db.Numeric(9,6),nullable=False)
-    curr_date = db.Column(db.DateTime, nullable=False)
+    curr_date_time = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20),nullable=False)
 
 class Driver(db.Model):
@@ -152,11 +163,13 @@ class Feedback(db.Model):
  
 
 # # -------------------- ROUTES --------------------
+@csrf.exempt
 @app.route('/')
 def index():
     return render_template("login.html")
 
 # Triggered when login button is clicked 
+@csrf.exempt
 @app.route('/login_button', methods=['POST'])
 def login():
     username = request.form.get('username')
@@ -186,6 +199,7 @@ def login():
         return jsonify({"error": "Unknown role"}), 400
 
 # login by google button triggers this route
+@csrf.exempt
 @app.route('/login_google')
 def login_google():
     redirect_uri = os.getenv("REDIRECT_URI")
@@ -193,11 +207,13 @@ def login_google():
     return google.authorize_redirect(redirect_uri)
 
 # Triggered when you click the link "don't have an account?"
+@csrf.exempt
 @app.route('/registration')
 def reg():
     return render_template("registration.html")
 
 # Callback route Google redirects to
+@csrf.exempt
 @app.route('/authorize_google')
 def authorize_google():
     token = google.authorize_access_token()
@@ -223,6 +239,7 @@ def authorize_google():
         return redirect('/registration2')
 
 # Registration2 route for new users (manual username + role selection)
+@csrf.exempt
 @app.route('/registration2', methods=['GET','POST'])
 def registration2():
     if request.method == 'POST':
@@ -255,7 +272,7 @@ def registration2():
         #added for sessions
         session['username'] = new_user.username
         session['role'] = new_user.role
-        session['dataofjoin']=new_user.reg_date
+        session['dateofjoin']=new_user.reg_date
 
         # 4. Redirect based on role
         if selected_role == 'student':
@@ -268,6 +285,7 @@ def registration2():
     # GET request → show registration form
     return render_template("registration2.html")
 
+@csrf.exempt
 @app.route('/Role')
 def roles():
     if 'username' not in session:
@@ -287,10 +305,12 @@ def roles():
 def student_ui():
     return render_template("student.html")
 
+@csrf.exempt
 @app.route('/Driver')
 def driver_ui():
     return render_template("driver.html")
 
+@csrf.exempt
 @app.route('/Admin')
 def admin_ui():
     drivers = Users.query.filter_by(role="driver").all()
@@ -304,7 +324,7 @@ def admin_ui():
     ]
     return render_template("admin.html", drivers=driver_data)
 
-
+@csrf.exempt
 @app.route('/Driver_log/<username>/<int:year>/<int:month>/<int:day>')
 def driver_log(username, year, month, day):
     today = date(year, month, day)
@@ -366,6 +386,7 @@ def driver_log(username, year, month, day):
         next_disabled=next_disabled
     )
 
+@csrf.exempt
 @app.route('/pre_register', methods=['POST'])
 def pre_register():
     email = request.form.get('email')
@@ -385,11 +406,13 @@ def pre_register():
 
     return jsonify({"success": True, "message": f"{role.capitalize()} pre-registered successfully!"})
 
+@csrf.exempt
 @app.route('/Admin/payments')
 def payment_logs_redirect():
     today = datetime.now()
     return redirect(url_for('payment_logs', year=today.year, month=today.month, day=today.day))
 
+@csrf.exempt
 @app.route('/Admin/payments/<int:year>/<int:month>/<int:day>')
 def payment_logs(year, month, day):
     today = date(year, month, day)
@@ -436,6 +459,7 @@ def payment_logs(year, month, day):
         next_disabled=next_disabled
     )
 
+@csrf.exempt
 @app.route('/Admin/feedbacks')
 def admin_feedbacks():
     feedbacks = Feedback.query.order_by(Feedback.feedback_date.desc()).all()
@@ -449,3 +473,126 @@ def admin_feedbacks():
         for fb in feedbacks
     ]
     return render_template("feedbacks.html", feedbacks=feedback_data)
+
+@app.route('/save_student_location', methods=['POST'])
+def save_student_location():
+    if 'username' not in session:
+        return jsonify({"error": "User not logged in"}), 401
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+
+    try:
+        lat = float(data.get('latitude'))
+        lon = float(data.get('longitude'))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid coordinates"}), 400
+
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return jsonify({"error": "Coordinates out of range"}), 400
+
+    username = session['username']
+
+    # Save to Loc.Student table
+    new_loc = Student(
+        username=username,
+        latitude=lat,
+        longitude=lon,
+        curr_date_time=datetime.now(),
+        status="waiting"
+    )
+
+    db.session.add(new_loc)
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": "Student location saved successfully",
+        "latitude": lat,
+        "longitude": lon
+    })
+
+# Optional route to generate CSRF token for JS use 
+@app.route('/get_csrf_token')
+def get_csrf_token():
+    token = generate_csrf()
+    return jsonify({'csrf_token': token})
+
+# ---- PAYMENT INTEGRATION ----
+@csrf.exempt
+@app.route('/create_order', methods=['POST'])
+def create_order():
+    amount = int(os.getenv('DEFAULT_AMOUNT')) * 100  # ₹10 in paise
+    currency = 'INR'
+
+    order = razorpay_client.order.create({
+        'amount': amount,
+        'currency': currency,
+        'payment_capture': 1
+    })
+    return jsonify({'order_id': order['id'], 'razorpay_key': os.getenv('RAZORPAY_KEY_ID')})
+
+@csrf.exempt
+@app.route('/verify_payment', methods=['POST'])
+def verify_payment():
+    data = request.get_json()
+    params_dict = {
+        'razorpay_order_id': data['razorpay_order_id'],
+        'razorpay_payment_id': data['razorpay_payment_id'],
+        'razorpay_signature': data['razorpay_signature']
+    }
+
+    try:
+        razorpay_client.utility.verify_payment_signature(params_dict)
+    except:
+        return jsonify({'success': False, 'message': 'Payment verification failed'}), 400
+
+    username = session.get('username')
+    if username:
+        # Log successful payment
+        payment = Payment_log(
+            username=username,
+            curr_date_time=datetime.now(),
+            amount=int(os.getenv('DEFAULT_AMOUNT'))
+        )
+        db.session.add(payment)
+
+        # Update student's status
+        student = Student.query.filter_by(username=username, status='waiting').order_by(Student.record_id.desc()).first()
+        if student:
+            student.status = 'accepted'
+        db.session.commit()
+
+    return jsonify({'success': True, 'message': 'Payment verified and student accepted'})
+
+@app.route('/cancel_student_ride',methods=['POST'])
+def cancel_student_ride():
+    if 'username' not in session:
+        return jsonify({"success":False, "error":"User not logged in"}), 401
+    
+    username = session['username']
+
+    try:
+        student_record = Student.query.filter(
+            Student.username == username,
+            Student.status == 'waiting'
+        ).order_by(
+            Student.record_id.desc()
+        ).first()
+
+        if not student_record:
+            return jsonify({"success":False, "error":"No active ride to cancel"}), 404
+        
+        student_record.status = 'cancelled'
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Ride successfully cancelled", 
+            "record_id": student_record.record_id
+        })
+    except Exception as e:
+        db.session.rollback()
+        print(f"Database error during cancellation: {e}")
+        return jsonify({"success": False, "error":"A server error occured during cancellation"}),500

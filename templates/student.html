@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Student Dashboard - EV Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,6 +133,7 @@
     <div id="infoMessage" class="floating-message fixed top-20 left-1/2 z-50 px-6 py-2.5 rounded-full shadow-lg bg-slate-900/80 text-yellow-200 border border-yellow-500/30">
         <i class="fas fa-info-circle mr-2"></i>Please request a ride first!
     </div>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // --- THIS IS THE FIX ---
@@ -187,39 +189,118 @@
                 }, 2500); // Message disappears after 2.5 seconds
             }
 
-            // Event Listeners
+            // LOCATION SAVE ON REQUEST
+            function getCSRFToken() {
+                const token = document.querySelector('meta[name="csrf-token"]');
+                return token ? token.getAttribute('content') : '';
+                }
+
+                async function saveStudentLocation(lat, lon) {
+                try {
+                    const csrfToken = getCSRFToken();
+
+                    const res = await fetch('/save_student_location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ latitude: lat, longitude: lon })
+                    });
+
+                    const data = await res.json();
+                    console.log("Location save response:", data);
+
+                    if (data.success) {
+                    alert("Your location has been saved!");
+                    } else {
+                    console.warn("Server returned error:", data.error);
+                    }
+                } catch (err) {
+                    console.error("Error saving location:", err);
+                }
+                }
+
+                function requestWithLocation() {
+                if (!navigator.geolocation) {
+                    alert("Geolocation is not supported by your browser");
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    console.log("Fetched location:", latitude, longitude);
+                    saveStudentLocation(latitude, longitude);
+                    },
+                    (err) => {
+                    console.error("Error getting location:", err);
+                    alert("Unable to get your location. Please enable location access.");
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            }
+
+            // Attach this to Request Ride button
             requestRideBtn.addEventListener('click', () => {
                 if (requestRideBtn.disabled) return;
 
-                // Simulate finding a ride
-                // Show ride info
+                // Get and save location with CSRF token
+                requestWithLocation();
+
+                // Continue existing behavior (UI changes)
                 rideInfo.classList.remove('hidden');
-                
-                // Enable/disable buttons
                 acceptPayBtn.disabled = false;
                 cancelRideBtn.disabled = false;
-                requestRideBtn.disabled = true; // Disable request button
+                requestRideBtn.disabled = true;
             });
 
-            acceptPayBtn.addEventListener('click', () => {
+            acceptPayBtn.addEventListener('click', async () => {
                 if (acceptPayBtn.disabled) {
                     showMessage(infoMessage);
                     return;
                 }
-                // Simulate successful booking
+
+                // Trigger payment
+                await payNow();
+
+                // Show success message
                 showMessage(successMessage);
-                
-                // Reset UI to initial state after the message fades
+
+                // Reset UI to initial state after message fades
                 setTimeout(resetToInitialState, 2500);
             });
 
-            cancelRideBtn.addEventListener('click', () => {
+
+            cancelRideBtn.addEventListener('click', async() => {
                 if (cancelRideBtn.disabled) {
                     showMessage(infoMessage);
                     return;
                 }
-                // Simulate ride cancellation
-                showMessage(cancelMessage);
+                try{
+                    // call Flask route to update status
+                    const response = await fetch('/cancel_student_ride',{
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCSRFToken(),
+                            'content-Type': 'application/json'
+                        },
+                    });
+
+                    const data = await response.json();
+
+                    if(data.success){
+                        showMessage(cancelMessage);
+                    } else{
+                        alert('Failed to cancel ride: '+data.error);
+                    }
+
+                } catch(error){
+                    console.error("Cancellation error:",error);
+                    alert("An error occured during cancellation.");
+                }
+
+                // Reset UI regardless of success (to prevent stuck buttons)
                 resetToInitialState();
             });
 
@@ -235,6 +316,53 @@
                 acceptPayBtn.disabled = true;
                 cancelRideBtn.disabled = true;
             }
+
+           async function payNow() {
+                try {
+                    const orderRes = await fetch('/create_order', { method: 'POST' });
+                    const orderData = await orderRes.json();
+
+                    if (!orderData.order_id) {
+                        alert("Error creating payment order");
+                        return;
+                    }
+
+                    const options = {
+                        "key": orderData.razorpay_key,
+                        "amount": 1000,
+                        "currency": "INR",
+                        "name": "Campus EV Tracker",
+                        "description": "Ride Payment",
+                        "order_id": orderData.order_id,
+                        "handler": async function (response) {
+                            // Verify payment on backend
+                            const verifyRes = await fetch('/verify_payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(response)
+                            });
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.success) {
+                                showMessage(successMessage);
+                                resetToInitialState();
+                            } else {
+                                showMessage(infoMessage);
+                                alert("Payment verification failed!");
+                            }
+                        },
+                        "theme": {
+                            "color": "#0ea5e9"
+                        }
+                    };
+
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                } catch (err) {
+                    console.error(err);
+                    alert("Payment initiation failed");
+                }
+            }
+
 
             // Set initial state on load (now it's called from inside)
             resetToInitialState();

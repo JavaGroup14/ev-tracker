@@ -92,7 +92,7 @@
               </div>
             </div>
 
-            <form id="loginForm" class="mt-6 space-y-5" novalidate>
+            <form id="loginForm" method="POST" action="{{ url_for('login') }}" class="mt-6 space-y-5" novalidate>
               <div>
                 <label for="loginUsername" class="block text-sm text-slate-300 mb-1">Username</label>
                 <input id="loginUsername" name="username" type="text" autocomplete="username" required
