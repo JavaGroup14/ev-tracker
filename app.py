@@ -1,4 +1,5 @@
-from flask import Flask, redirect, url_for, session, request, render_template,jsonify
+from flask import Flask, redirect, url_for, session, request, render_template,jsonify,make_response
+from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
@@ -178,14 +179,14 @@ class Feedback(db.Model):
  
 
 # # -------------------- ROUTES --------------------
-@csrf.exempt
 @app.route('/')
+@csrf.exempt
 def index():
     return render_template("login.html")
 
 # Triggered when login button is clicked 
-@csrf.exempt
 @app.route('/login_button', methods=['POST'])
+@csrf.exempt
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
@@ -214,22 +215,22 @@ def login():
         return jsonify({"error": "Unknown role"}), 400
 
 # login by google button triggers this route
-@csrf.exempt
 @app.route('/login_google')
+@csrf.exempt
 def login_google():
     redirect_uri = os.getenv("REDIRECT_URI")
     redirect_uri = os.getenv("REDIRECT_URI")
     return google.authorize_redirect(redirect_uri)
 
 # Triggered when you click the link "don't have an account?"
-@csrf.exempt
 @app.route('/registration')
+@csrf.exempt
 def reg():
     return render_template("registration.html")
 
 # Callback route Google redirects to
-@csrf.exempt
 @app.route('/authorize_google')
+@csrf.exempt
 def authorize_google():
     token = google.authorize_access_token()
     user_info = token['userinfo']
@@ -254,8 +255,8 @@ def authorize_google():
         return redirect('/registration2')
 
 # Registration2 route for new users (manual username + role selection)
-@csrf.exempt
 @app.route('/registration2', methods=['GET','POST'])
+@csrf.exempt
 def registration2():
     if request.method == 'POST':
         form_username = request.form['username']
@@ -395,8 +396,33 @@ def send_otp_email(service, recipient_email, otp_code):
         print(f"An unexpected error occurred: {e}")
         return False
 
-@csrf.exempt
+
+def login_required(f):
+    """
+    A decorator to require a user to be logged in.
+    Also adds "no-cache" headers to prevent caching of protected pages.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in session:
+            # If user is not logged in, redirect them
+            return redirect(url_for('index')) # Or your login page
+
+        # --- THIS IS THE FIX ---
+        # If the user IS logged in, run the original route function...
+        response = make_response(f(*args, **kwargs))
+        
+        # ...then add headers to the response to prevent caching
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        # --- END FIX ---
+        
+        return response
+    return decorated_function
+
 @app.route('/send-otp', methods=['POST'])
+@csrf.exempt
 def send_otp():
     form_username = request.form['username']
     form_email = request.form['email']
@@ -441,8 +467,8 @@ def send_otp():
         return jsonify({"success": False, "error": "Failed to send OTP"}), 500
 
 # --- NEW ROUTE: To verify OTP and create account ---
-@csrf.exempt
 @app.route('/verify-and-create', methods=['POST'])
+@csrf.exempt
 def verify_and_create():
     user_otp = request.form.get('otp')
     
@@ -494,8 +520,9 @@ def verify_and_create():
     redirect_url = url_for(f"{new_user.role}_ui")
     return jsonify({"success": True, "redirect_url": redirect_url})
 
-@csrf.exempt
 @app.route('/Role')
+@csrf.exempt
+@login_required
 def roles():
     if 'username' not in session:
         return redirect(url_for('index'))
@@ -510,18 +537,21 @@ def roles():
     
     return render_template('role.html',username=cur_username,role=cur_role,email=user.email,dateofjoin=user.reg_date)
 
-@csrf.exempt
 @app.route('/Student')
+@csrf.exempt
+@login_required
 def student_ui():
     return render_template("student.html")
 
-@csrf.exempt
 @app.route('/Driver')
+@csrf.exempt
+@login_required
 def driver_ui():
     return render_template("driver.html")
 
-@csrf.exempt
 @app.route('/Admin')
+@csrf.exempt
+@login_required
 def admin_ui():
     drivers = Users.query.filter_by(role="driver").all()
     active_usernames = {d.username for d in Driver.query.with_entities(Driver.username).all()}
@@ -534,8 +564,8 @@ def admin_ui():
     ]
     return render_template("admin.html", drivers=driver_data)
 
-@csrf.exempt
 @app.route('/Driver_log/<username>/<int:year>/<int:month>/<int:day>')
+@csrf.exempt
 def driver_log(username, year, month, day):
     today = date(year, month, day)
     month_start = date(year, month, 1)
@@ -596,8 +626,8 @@ def driver_log(username, year, month, day):
         next_disabled=next_disabled
     )
 
-@csrf.exempt
 @app.route('/pre_register', methods=['POST'])
+@csrf.exempt
 def pre_register():
     email = request.form.get('email')
     role = request.form.get('role')  # driver/admin
@@ -616,14 +646,14 @@ def pre_register():
 
     return jsonify({"success": True, "message": f"{role.capitalize()} pre-registered successfully!"})
 
-@csrf.exempt
 @app.route('/Admin/payments')
+@csrf.exempt
 def payment_logs_redirect():
     today = datetime.now()
     return redirect(url_for('payment_logs', year=today.year, month=today.month, day=today.day))
 
-@csrf.exempt
 @app.route('/Admin/payments/<int:year>/<int:month>/<int:day>')
+@csrf.exempt
 def payment_logs(year, month, day):
     today = date(year, month, day)
     month_start = date(year, month, 1)
@@ -669,8 +699,8 @@ def payment_logs(year, month, day):
         next_disabled=next_disabled
     )
 
-@csrf.exempt
 @app.route('/Admin/feedbacks')
+@csrf.exempt
 def admin_feedbacks():
     feedbacks = Feedback.query.order_by(Feedback.feedback_date.desc()).all()
     feedback_data = [
@@ -804,3 +834,15 @@ def cancel_student_ride():
         db.session.rollback()
         print(f"Database error during cancellation: {e}")
         return jsonify({"success": False, "error":"A server error occured during cancellation"}),500
+
+
+@app.route('/signout', methods=['POST'])
+@csrf.exempt
+def sign_out():
+    if 'username' in session:
+        # User is logged in, so sign them out
+        session.pop('username', None)
+        return redirect(url_for('index'))
+    else:
+        # User was not logged in anyway
+        return jsonify({"success": False, "error": "User not logged in."}), 401

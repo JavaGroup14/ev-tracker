@@ -55,7 +55,13 @@
         </a>
         <div class="flex items-center gap-4">
           <a href="" class="text-sm text-slate-300 hover:text-white transition-colors">Dashboard</a>
-          <button class="text-sm text-slate-300 hover:text-white transition-colors" onclick="alert('Sign out functionality will be implemented here')">Sign out</button>
+          <form action="/signout" method="POST" class="inline">
+            <button type="submit" 
+                    class="bg-transparent border-none p-0 cursor-pointer 
+                          text-sm text-slate-300 hover:text-white transition-colors">
+              Sign out
+            </button>
+          </form>
         </div>
       </nav>
     </header>
