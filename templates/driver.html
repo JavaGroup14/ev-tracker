@@ -222,6 +222,28 @@
         </div>
     </div>
 
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:5000');
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        setInterval(() => {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                socket.emit('update_location', {
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude
+                });
+            });
+        }, 2000); // send every 2 seconds
+
+        socket.on('driver_location_update', (data) => {
+            console.log('Driver update received:', data);
+        });
+    </script>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -378,9 +400,11 @@
             });
 
             // Toggle status (Offline/Online)
-            statusBtn.addEventListener('click', function() {
+            statusBtn.addEventListener('click', async function() {
                 isOnline = !isOnline;
-                
+
+                await update_worklog();
+
                 if (isOnline) {
                     this.innerHTML = `
                         <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -407,6 +431,49 @@
                     statusText.textContent = 'Offline';
                 }
             });
+
+            async function update_worklog(){
+                try{
+                    if(isOnline){
+                        const res = await fetch('/update_worklog', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                status : 'online',
+                                })
+                        });
+                        const data = await res.json();
+                        console.log("update_worklog response:", data);
+                        if (data.success) {
+                            alert("You are online");
+                        } else {
+                            console.warn("Server returned error:", data.error);
+                        }
+                    } else{
+                        const res = await fetch('/update_worklog', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                status : 'offline',
+                                })
+                        });
+                        const data = await res.json();
+                        console.log("update_worklog response:", data);
+                        if (data.success) {
+                            alert("You are offline");
+                        } else {
+                            console.warn("Server returned error:", data.error);
+                        }
+                    }
+                } catch(err){
+                    console.error("Error saving location:", err);
+                }
+            }
+
         });
     </script>
 </body>

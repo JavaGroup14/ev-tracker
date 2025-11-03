@@ -7,6 +7,7 @@ import os, urllib
 from email.message import EmailMessage
 from datetime import datetime, timedelta, date,timezone
 from sqlalchemy import text
+from flask_socketio import SocketIO, emit
 import base64
 import secrets
 import json
@@ -91,6 +92,12 @@ razorpay_client = razorpay.Client(
     auth=(os.getenv("RAZORPAY_KEY_ID"), os.getenv("RAZORPAY_SECRET"))
 )
 
+# Socket 
+socketio = SocketIO(app, 
+                    cors_allowed_origins="*",
+                    manage_session=False  # This tells Flask-SocketIO to use the native Flask session 
+                    )
+
 csrf = CSRFProtect(app)
 oauth = OAuth(app)
 
@@ -147,6 +154,7 @@ class Driver(db.Model):
     latitude = db.Column(db.Numeric(9,6),nullable=False)
     longitude = db.Column(db.Numeric(9,6),nullable=False)
     status = db.Column(db.String(20),nullable=False)
+    last_updated = db.Column(db.DateTime,nullable=False)
 
 class Driver_work_log(db.Model):
     __tablename__ = "Driver_work_log"
@@ -554,7 +562,10 @@ def driver_ui():
 @login_required
 def admin_ui():
     drivers = Users.query.filter_by(role="driver").all()
-    active_usernames = {d.username for d in Driver.query.with_entities(Driver.username).all()}
+    active_usernames = {
+        d.username 
+        for d in Driver_work_log.query.filter(Driver_work_log.end_time == None).with_entities(Driver_work_log.username).all()
+    }
     driver_data = [
         {
             "name": user.username,
@@ -834,6 +845,97 @@ def cancel_student_ride():
         db.session.rollback()
         print(f"Database error during cancellation: {e}")
         return jsonify({"success": False, "error":"A server error occured during cancellation"}),500
+
+# In your Flask Python file:
+@csrf.exempt
+@app.route('/update_worklog',methods=['POST'])
+def update_worklog():
+    if 'username' not in session:
+        return jsonify({"success":False, "error":"User not logged in"}), 401
+    
+    username = session['username']
+
+    try:
+        data = request.get_json(silent=True)
+
+        if data['status'] == 'online':
+            # Check if already online (prevents duplicate start logs)
+            active_log = Driver_work_log.query.filter_by(username=username, end_time=None).first()
+            if active_log:
+                 return jsonify({"success": False, "error": "Already online"}), 400
+
+            log = Driver_work_log(
+                username = username,
+                curr_date = date.today(),
+                start_time = datetime.now().time(), # Added start_time
+                end_time = None
+            )
+            db.session.add(log)
+            db.session.commit() # Commit here
+            
+        elif data['status'] == 'offline':
+            # Find the active log entry
+            driver = Driver_work_log.query.filter_by(username=username, end_time=None).order_by(Driver_work_log.log_id.desc()).first()
+            
+            if driver:
+                driver.end_time = datetime.now().time() 
+                db.session.commit()
+            else:
+                return jsonify({"success": False, "error": "No active online session found to end"}), 400
+
+        return jsonify({
+            "success": True,
+            "error": None
+        })
+    except Exception as e:
+        db.session.rollback()
+        print(f"Worklog DB Error: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Database error: " + str(e)
+        }), 500
+
+# When driver connects
+@csrf.exempt
+@socketio.on('connect')
+def handle_connect():
+    print('Driver connected:', request.sid)
+
+# When driver disconnects
+@csrf.exempt
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Driver disconnected:', request.sid)
+
+# Receive location updates from driver
+@socketio.on('update_location')
+def handle_update_location(data):
+    username = session['username']
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+
+    if not username or latitude is None or longitude is None:
+        return
+
+    driver = Driver.query.filter_by(username=username).first()
+    if driver:
+        driver.latitude = latitude
+        driver.longitude = longitude
+        driver.last_updated = datetime.now()
+    else:
+        driver = Driver(username=username, latitude=latitude, longitude=longitude, status='unfilled',last_updated=datetime.now())
+        db.session.add(driver)
+
+    db.session.commit()
+
+    # Broadcast to all clients (e.g. passenger map)
+    emit('driver_location_update', {
+        'latitude': latitude,
+        'longitude': longitude
+    }, broadcast=True)
+
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=5000)
 
 
 @app.route('/signout', methods=['POST'])
