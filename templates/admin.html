@@ -15,6 +15,7 @@
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 
 <body class="bg-[#0b1e3c] text-white font-sans flex flex-col min-h-screen">
@@ -58,6 +59,7 @@
     <div id="driverList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       {% for driver in drivers %}
         <div 
+        data-driver-name="{{ driver.name }}"
           class="bg-[#1e335c] rounded-2xl p-4 hover:bg-[#27457d] transition shadow-md flex items-center justify-between cursor-pointer"
           onclick="openDriverLog('{{ driver.name }}')">
           <div class="flex items-center space-x-3">
@@ -137,6 +139,50 @@
 
   <!-- Scripts -->
   <script>
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Connect to the socket.io server
+      const socket = io();
+
+      socket.on('connect', () => {
+        console.log('Connected to server (Admin)');
+      });
+
+      // Listen for the 'driver_status_changed' event from the server
+      socket.on('driver_status_changed', (data) => {
+        // data = { driver_name: 'John Doe', status: 'Inactive' }
+        console.log('Received status update:', data);
+
+        const driverName = data.driver_name;
+        const newStatus = data.status;
+
+        // Find the driver's card using the data attribute we added
+        const card = document.querySelector(`div[data-driver-name="${driverName}"]`);
+        
+        if (!card) {
+          console.warn(`Card for driver ${driverName} not found.`);
+          return;
+        }
+
+        // Find the status <p> tag *inside* that card
+        const statusElement = card.querySelector('p.text-sm');
+        
+        if (statusElement) {
+          // Update the text
+          statusElement.textContent = newStatus;
+          
+          // Update the color
+          statusElement.classList.remove('text-green-400', 'text-red-400');
+          
+          if (newStatus === 'Active') {
+            statusElement.classList.add('text-green-400');
+          } else {
+            statusElement.classList.add('text-red-400');
+          }
+        }
+      });
+    });
+
     // Elements
     const addBtn = document.getElementById('addDriverBtn');
     const modal = document.getElementById('preRegisterModal');

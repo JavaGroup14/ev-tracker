@@ -9,7 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+
     <style>
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
@@ -131,6 +135,11 @@
         #chevronIcon {
             transition: transform 0.3s ease;
         }
+        
+        /* Ensure route instructions appear above map controls */
+        .leaflet-routing-container {
+            z-index: 1001 !important;
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100">
@@ -161,7 +170,6 @@
             </div>
         </nav>
 
-        <!-- Destination Search Bar Container -->
         <div class="px-4 py-3 bg-slate-900/50 border-b border-white/10">
             <div class="max-w-7xl mx-auto">
                 <div class="destination-dropdown" style="max-width: 400px;">
@@ -182,7 +190,6 @@
         </div>
 
         <div id="mapContainer" class="flex-1 relative overflow-hidden">
-            <!-- Status indicator -->
             <div class="absolute top-4 right-4 z-[1000] bg-slate-900/90 backdrop-blur-md rounded-xl shadow-2xl p-3 flex gap-4 items-center border border-white/10">
                 <div class="flex items-center gap-2">
                     <span id="availabilityDot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -202,7 +209,6 @@
                     <div class="w-10 h-1 bg-white/30 rounded-full"></div>
                 </div>
 
-                <!-- Control buttons -->
                 <div class="grid grid-cols-2 gap-3">
                     <button id="availabilityBtn" class="flex flex-col items-center justify-center p-4 rounded-xl text-white text-sm font-semibold transition-all duration-200 ease-in-out shadow-lg transform hover:-translate-y-0.5 bg-emerald-600 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40">
                         <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -223,19 +229,59 @@
     </div>
 
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+
     <script>
-        const socket = io('http://localhost:5000');
+        // --- Socket.IO Connection ---
+        // Connects to the same server that served the page.
+        // Use 'http://localhost:5000' if you're opening the .html file directly
+        const socket = io(); 
 
         socket.on('connect', () => {
             console.log('Connected to server');
         });
 
+        // --- Global state variables ---
+        let driverCurrentLocation = null; // Stores [lat, lng]
+        let routingControl = null; // Holds the current route object
+        let map; // Make map global so this script can access it
+        let marker; // Make marker global
+
+        let isOnline = false;
+
+        // --- Live Location Tracking and Socket.IO ---
         setInterval(() => {
             navigator.geolocation.getCurrentPosition((pos) => {
-                socket.emit('update_location', {
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude
-                });
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                
+                // Store the current location
+                driverCurrentLocation = [lat, lng];
+
+                if (map) { // Only run if map has been initialized
+                    if (marker) {
+                        // Update existing marker
+                        marker.setLatLng([lat, lng]);
+                    } else {
+                        // Create marker on first run
+                        marker = L.marker([lat, lng]).addTo(map);
+                        marker.bindPopup('<b>Your Location</b>').openPopup();
+                        // Center map on the first *real* location
+                        map.setView([lat, lng], 16); 
+                    }
+                }
+
+                // Send location to server
+                if(isOnline){
+                    socket.emit('update_location', {
+                        latitude: lat,
+                        longitude: lng
+                    });
+                }
             });
         }, 2000); // send every 2 seconds
 
@@ -244,7 +290,7 @@
         });
     </script>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Campus locations for NIT Warangal
@@ -261,8 +307,8 @@
                 { name: 'Admin Building', lat: 17.9805, lng: 79.5290 }
             ];
 
-            // Initialize the map (centered on NIT Warangal)
-            const map = L.map('map').setView([17.9806, 79.5311], 15);
+            // Initialize the map and assign to global variable
+            map = L.map('map').setView([17.9806, 79.5311], 15);
 
             // Add OpenStreetMap tiles
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -270,10 +316,8 @@
                 attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(map);
 
-            // Add a marker for current location
-            let marker = L.marker([17.9806, 79.5311]).addTo(map);
-            marker.bindPopup('<b>Driver Location</b><br>NIT Warangal Campus').openPopup();
-
+            // Marker is now initialized by the geolocation interval in the other script
+            
             // Ensure map renders properly after page load
             setTimeout(function() {
                 map.invalidateSize();
@@ -281,7 +325,7 @@
 
             // State management
             let isVacant = true;
-            let isOnline = false;
+            
 
             // DOM elements
             const availabilityBtn = document.getElementById('availabilityBtn');
@@ -334,27 +378,53 @@
                 populateDropdown(filtered);
             });
 
-            // Select location
+            // ### UPDATED selectLocation FUNCTION ###
             function selectLocation(loc) {
-                // Update map
-                map.setView([loc.lat, loc.lng], 17);
-                marker.setLatLng([loc.lat, loc.lng]);
-                marker.bindPopup(`<b>${loc.name}</b><br>NIT Warangal Campus`).openPopup();
+                // 1. Check if we have the driver's location yet
+                if (!driverCurrentLocation) {
+                    alert("Still acquiring your location. Please try again in a moment.");
+                    return;
+                }
 
-                // Close dropdown
+                // 2. If a route already exists, remove it
+                if (routingControl) {
+                    map.removeControl(routingControl);
+                }
+                
+                // 3. (REMOVED) We no longer hide the live marker
+
+                // 4. Create the new route
+                routingControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(driverCurrentLocation[0], driverCurrentLocation[1]), // Start
+                        L.latLng(loc.lat, loc.lng)  // End
+                    ],
+                    show: false, // <-- Hides the directions panel
+                    routeWhileDragging: false,
+                    addWaypoints: false,
+                    draggableWaypoints: false,
+                    fitSelectedRoutes: true,
+                    createMarker: function() { return null; } // <-- Hides the plugin's markers
+                }).addTo(map);
+
+                // 5. (REMOVED) No close button to listen for
+                
+
+                // --- (Original UI logic) ---
+                // 6. Close dropdown
                 dropdownContent.classList.remove('show');
                 chevronIcon.style.transform = 'rotate(0deg)';
                 searchInput.value = '';
                 populateDropdown();
 
-                // Update button text
+                // 7. Update button text
                 destinationBtnText.textContent = loc.name;
 
-                // Show selected location
-                selectedDestination.textContent = loc.name;
+                // 8. Show selected location
+                selectedDestination.textContent = `Routing to: ${loc.name}`;
                 selectedDestination.classList.add('show');
 
-                // Hide after 3 seconds
+                // 9. Hide after 3 seconds
                 setTimeout(() => {
                     selectedDestination.classList.remove('show');
                 }, 3000);
@@ -368,6 +438,7 @@
                 }
             });
 
+            
             // Toggle availability (Vacant/Full)
             // Toggle availability (Vacant/Full)
             availabilityBtn.addEventListener('click', async function() {
@@ -430,6 +501,11 @@
             statusBtn.addEventListener('click', async function() {
                 isOnline = !isOnline;
 
+                const newStatus = isOnline ? 'Active' : 'Inactive';
+                socket.emit('update_driver_status', { 
+                    status: newStatus 
+                });
+                
                 await update_worklog();
 
                 if (isOnline) {

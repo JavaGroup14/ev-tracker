@@ -934,6 +934,40 @@ def handle_update_location(data):
         'longitude': longitude
     }, broadcast=True)
 
+@socketio.on('update_driver_status')
+def handle_status_update(data):
+    """
+    This event is sent FROM the driver's page.
+    The driver is logged in, so we get their name from the session.
+    'data' will be a dict like: {'status': 'Inactive'}
+    """
+    
+    # 1. Get the driver's name from the session
+    if 'username' not in session:
+        print("Socket update from unknown user.")
+        return # Ignore if not logged in
+        
+    driver_name = session.get('username')
+    
+    # 2. Get the new status from the client's payload
+    new_status = data.get('status') 
+
+    if not new_status:
+        print(f"No status provided for {driver_name}")
+        return
+
+    print(f"Status Update: Driver '{driver_name}' is now '{new_status}'")
+    
+    # 3. Prepare the *full* data payload for the admin page
+    # The admin page needs *both* the name and the status
+    broadcast_data = {
+        'driver_name': driver_name,
+        'status': new_status
+    }
+    
+    # 4. Broadcast the new, complete data to EVERYONE (all connected admins)
+    emit('driver_status_changed', broadcast_data, broadcast=True)
+
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000)
 
