@@ -938,8 +938,8 @@ if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000)
 
 
-@app.route('/signout', methods=['POST'])
 @csrf.exempt
+@app.route('/signout', methods=['POST'])
 def sign_out():
     if 'username' in session:
         # User is logged in, so sign them out
@@ -948,3 +948,52 @@ def sign_out():
     else:
         # User was not logged in anyway
         return jsonify({"success": False, "error": "User not logged in."}), 401
+    
+@csrf.exempt
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    if 'username' not in session or 'role' not in session:
+        return jsonify({"success": False, "error": "User not logged in."}), 401
+    username = session['username']
+    role = session['role']
+    data = request.get_json()
+    feedback_text = data.get('feedback', '').strip()
+    if not feedback_text:
+        return jsonify({'error': 'Empty feedback'}), 400
+    new_feedback = Feedback(
+        username = username,
+        role = session['role'],
+        feedback_date = date.today(),
+        feedback = feedback_text
+    )
+    db.session.add(new_feedback)
+    db.session.commit()
+    return jsonify({'message': 'Feedback submitted successfully'})
+
+@csrf.exempt
+@app.route('/update_availability', methods=['POST'])
+def update_availability():
+    if 'username' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    username = session['username']
+    data = request.get_json()
+    new_status = data.get('availability')
+    driver_id = session.get('driver_id') # Get the current driver's ID
+
+    if new_status not in ['vacant', 'full']:
+        return jsonify({'success': False, 'error': 'Invalid status provided'}), 400
+
+    try:
+        driver = Driver.query.filter_by(username=username).first()
+        if driver:
+           driver.status = new_status
+           db.session.commit()
+        else:
+            return jsonify({'success': False, 'error': 'Driver record not found'}), 404
+        return jsonify({'success': True, 'message': f'Status updated to {new_status}'})
+
+    except Exception as e:
+        app.logger.error(f"Database error during availability update for driver {driver_id}: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Database update failed'}), 500
+

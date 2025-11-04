@@ -173,6 +173,37 @@
                 Security
               </button>
             </div>
+
+            <!-- ✅ Feedback Button (visible only to student/admin) -->
+            {% if role in ['student', 'driver'] %}
+            <div class="mt-6 text-center">
+              <button id="feedbackBtn"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary-500/20 hover:bg-primary-500/30 border border-primary-500/40 text-primary-200 font-medium transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                  stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 20.25c4.97 0 9-3.813 9-8.516 0-2.4-1.05-4.552-2.751-6.065A9.021 9.021 0 0012 3.75a9.02 9.02 0 00-6.249 1.919A8.534 8.534 0 003 11.734c0 4.703 4.03 8.516 9 8.516z" />
+                </svg>
+                Give Feedback
+              </button>
+            </div>
+            {% endif %}
+
+            <!-- ✅ Feedback Modal -->
+            <div id="feedbackModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
+              <div class="bg-slate-900 border border-white/10 rounded-2xl p-6 w-96 text-slate-100 shadow-xl">
+                <h2 class="text-lg font-semibold mb-3">Submit Feedback</h2>
+                <textarea id="feedbackText" maxlength="1000"
+                  placeholder="Share your feedback..." rows="5"
+                  class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 focus:ring-2 focus:ring-primary-500 outline-none"></textarea>
+                <div class="flex justify-end gap-3 mt-4">
+                  <button id="closeFeedback"
+                    class="px-3 py-1.5 text-sm rounded-md bg-slate-700 hover:bg-slate-600">Cancel</button>
+                  <button id="submitFeedback"
+                    class="px-3 py-1.5 text-sm rounded-md bg-primary-600 hover:bg-primary-500">Submit</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -261,6 +292,50 @@
       alert('Edit profile functionality will be implemented here');
       // Add your edit profile logic here
     });
+ 
+    // Feedback modal logic
+    const feedbackBtn = document.getElementById('feedbackBtn');
+    const feedbackModal = document.getElementById('feedbackModal');
+    const closeFeedback = document.getElementById('closeFeedback');
+    const submitFeedback = document.getElementById('submitFeedback');
+    const feedbackText = document.getElementById("feedbackText");
+
+    if (feedbackBtn) {
+      feedbackBtn.addEventListener("click", () => {
+        feedbackModal.classList.remove("hidden");
+      });
+
+      closeFeedback.addEventListener("click", () => {
+        feedbackModal.classList.add("hidden");
+      });
+
+      submitFeedback.addEventListener("click", async () => {
+        const text = feedbackText.value.trim();
+        if (!text) {
+          alert("Please enter your feedback before submitting!");
+          return;
+        }
+
+        try {
+          const response = await fetch("/submit_feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ feedback: text })
+          });
+
+          if (response.ok) {
+            alert("✅ Feedback submitted successfully!");
+            feedbackModal.classList.add("hidden");
+            feedbackText.value = "";
+          } else {
+            alert("❌ Failed to submit feedback. Please try again.");
+          }
+        } catch (error) {
+          console.error("Error submitting feedback:", error);
+          alert("⚠️ Something went wrong. Try again later.");
+        }
+      });
+    }
   </script>
 </body>
 </html>

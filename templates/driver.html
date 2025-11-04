@@ -369,9 +369,11 @@
             });
 
             // Toggle availability (Vacant/Full)
-            availabilityBtn.addEventListener('click', function() {
+            // Toggle availability (Vacant/Full)
+            availabilityBtn.addEventListener('click', async function() {
                 isVacant = !isVacant;
-                
+                const newStatus = isVacant ? 'vacant' : 'full';
+
                 if (isVacant) {
                     this.innerHTML = `
                         <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -396,6 +398,31 @@
                     availabilityDot.classList.remove('bg-emerald-500');
                     availabilityDot.classList.add('bg-red-500');
                     availabilityText.textContent = 'Full';
+                }
+                
+                // 🚀 AJAX Call to Flask
+                try {
+                    const response = await fetch('/update_availability', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            availability: newStatus
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log(`Availability updated to: ${newStatus}`);
+                        // Optional: Show a temporary notification
+                    } else {
+                        console.error('Failed to update availability:', data.error);
+                        // Optional: Revert UI change if update fails
+                    }
+                } catch (error) {
+                    console.error('Error sending availability update:', error);
+                    // Optional: Revert UI change
                 }
             });
 
