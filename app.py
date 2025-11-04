@@ -876,6 +876,7 @@ def update_worklog():
 
             if driver:
                 driver.is_active = True
+                db.session.commit() 
             else:
                 return jsonify({"success": False, "error": "Didnt allow location."}), 400
 
@@ -895,6 +896,7 @@ def update_worklog():
 
             if driver:
                 driver.is_active = False
+                db.session.commit()
             else:
                 return jsonify({"success": False, "error": "Didnt allow location."}), 400
 
@@ -996,6 +998,7 @@ def sign_out():
         driver = Driver.query.filter_by(username=username).first()
         if driver:
             driver.is_active = False
+            db.session.commit()
         else:
             return jsonify({"success": False, "error": "Didnt allow location."}), 400
         driver_log = Driver_work_log.query.filter_by(username=username, end_time=None).order_by(Driver_work_log.log_id.desc()).first()
