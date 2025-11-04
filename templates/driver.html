@@ -290,7 +290,6 @@
         });
     </script>
 
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Campus locations for NIT Warangal
@@ -378,7 +377,6 @@
                 populateDropdown(filtered);
             });
 
-            // ### UPDATED selectLocation FUNCTION ###
             function selectLocation(loc) {
                 // 1. Check if we have the driver's location yet
                 if (!driverCurrentLocation) {
@@ -391,8 +389,6 @@
                     map.removeControl(routingControl);
                 }
                 
-                // 3. (REMOVED) We no longer hide the live marker
-
                 // 4. Create the new route
                 routingControl = L.Routing.control({
                     waypoints: [
@@ -407,10 +403,6 @@
                     createMarker: function() { return null; } // <-- Hides the plugin's markers
                 }).addTo(map);
 
-                // 5. (REMOVED) No close button to listen for
-                
-
-                // --- (Original UI logic) ---
                 // 6. Close dropdown
                 dropdownContent.classList.remove('show');
                 chevronIcon.style.transform = 'rotate(0deg)';
@@ -438,8 +430,6 @@
                 }
             });
 
-            
-            // Toggle availability (Vacant/Full)
             // Toggle availability (Vacant/Full)
             availabilityBtn.addEventListener('click', async function() {
                 isVacant = !isVacant;

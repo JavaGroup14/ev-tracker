@@ -155,6 +155,7 @@ class Driver(db.Model):
     longitude = db.Column(db.Numeric(9,6),nullable=False)
     status = db.Column(db.String(20),nullable=False)
     last_updated = db.Column(db.DateTime,nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
 
 class Driver_work_log(db.Model):
     __tablename__ = "Driver_work_log"
@@ -846,7 +847,6 @@ def cancel_student_ride():
         print(f"Database error during cancellation: {e}")
         return jsonify({"success": False, "error":"A server error occured during cancellation"}),500
 
-# In your Flask Python file:
 @csrf.exempt
 @app.route('/update_worklog',methods=['POST'])
 def update_worklog():
@@ -862,26 +862,41 @@ def update_worklog():
             # Check if already online (prevents duplicate start logs)
             active_log = Driver_work_log.query.filter_by(username=username, end_time=None).first()
             if active_log:
-                 return jsonify({"success": False, "error": "Already online"}), 400
+                return jsonify({"success": False, "error": "Already online"}), 400
 
             log = Driver_work_log(
                 username = username,
                 curr_date = date.today(),
-                start_time = datetime.now().time(), # Added start_time
+                start_time = datetime.now().time(), 
                 end_time = None
             )
             db.session.add(log)
-            db.session.commit() # Commit here
+
+            driver = Driver.query.filter_by(username=username).first()
+
+            if driver:
+                driver.is_active = True
+            else:
+                return jsonify({"success": False, "error": "Didnt allow location."}), 400
+
+            db.session.commit() 
             
         elif data['status'] == 'offline':
             # Find the active log entry
-            driver = Driver_work_log.query.filter_by(username=username, end_time=None).order_by(Driver_work_log.log_id.desc()).first()
+            driver_log = Driver_work_log.query.filter_by(username=username, end_time=None).order_by(Driver_work_log.log_id.desc()).first()
             
-            if driver:
-                driver.end_time = datetime.now().time() 
+            if driver_log:
+                driver_log.end_time = datetime.now().time() 
                 db.session.commit()
             else:
                 return jsonify({"success": False, "error": "No active online session found to end"}), 400
+            
+            driver = Driver.query.filter_by(username=username).first()
+
+            if driver:
+                driver.is_active = False
+            else:
+                return jsonify({"success": False, "error": "Didnt allow location."}), 400
 
         return jsonify({
             "success": True,
@@ -923,7 +938,7 @@ def handle_update_location(data):
         driver.longitude = longitude
         driver.last_updated = datetime.now()
     else:
-        driver = Driver(username=username, latitude=latitude, longitude=longitude, status='unfilled',last_updated=datetime.now())
+        driver = Driver(username=username, latitude=latitude, longitude=longitude, status='unfilled',last_updated=datetime.now(),is_active=True)
         db.session.add(driver)
 
     db.session.commit()
@@ -976,9 +991,21 @@ if __name__ == '__main__':
 @app.route('/signout', methods=['POST'])
 def sign_out():
     if 'username' in session:
+        username = session['username']
+        # If driver tries to logout without going offline then 
+        driver = Driver.query.filter_by(username=username).first()
+        if driver:
+            driver.is_active = False
+        else:
+            return jsonify({"success": False, "error": "Didnt allow location."}), 400
+        driver_log = Driver_work_log.query.filter_by(username=username, end_time=None).order_by(Driver_work_log.log_id.desc()).first()
+        if driver_log:
+            driver_log.end_time = datetime.now().time() 
+            db.session.commit()
         # User is logged in, so sign them out
         session.pop('username', None)
         return redirect(url_for('index'))
+    
     else:
         # User was not logged in anyway
         return jsonify({"success": False, "error": "User not logged in."}), 401
